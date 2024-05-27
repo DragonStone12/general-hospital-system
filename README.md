@@ -3,6 +3,8 @@ Office administrative tool for General Hospital
 
 General Hospital Management System - README
 
+![Database Schema](person_account_schemas.png)
+
 Overview
 
 The General Hospital Management System is a comprehensive solution designed to streamline healthcare facility operations. It integrates various functionalities to manage appointments, patient records, billing, and communications efficiently. This document outlines the system requirements and functionalities to ensure the software meets the needs of healthcare providers and patients.
