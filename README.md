@@ -1,4 +1,4 @@
-# general-hospital-system
+# general-hospital-system #
 Office administrative tool for General Hospital
 
 General Hospital Management System - README
@@ -9,7 +9,7 @@ Overview
 
 The General Hospital Management System is a comprehensive solution designed to streamline healthcare facility operations. It integrates various functionalities to manage appointments, patient records, billing, and communications efficiently. This document outlines the system requirements and functionalities to ensure the software meets the needs of healthcare providers and patients.
 
-System Architecture
+ ### System Architecture
 
 	•	Frontend: Angular
 	•	Backend: Spring Boot Cloud
@@ -89,9 +89,3 @@ Installation Steps
 	4.	Deploy the application using Kubernetes manifests.
 	5.	Configure ingress controllers and service discovery as required.
 	6.	Access the application through the configured external IP or domain name.
-
-Support
-
-For technical support, please contact our helpdesk at support@generalhospitalms.com. Our team is available 24/7 to assist with any issues or queries related to the General Hospital Management System.
-
-This README provides a detailed guide to fully leverage the capabilities of the General Hospital Management System for optimal operational efficiency and patient satisfaction.
