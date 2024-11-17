@@ -2,13 +2,12 @@
 import os
 import stat
 import subprocess
-import re
 import sys
-from pathlib import Path
 
 class GitHookInstallationError(Exception):
     """Custom exception for git hook installation errors."""
     pass
+
 class GitHooksInstaller:
     def __init__(self):
         # Get git root directory
@@ -27,158 +26,169 @@ import os
 import sys
 import subprocess
 import re
+import stat
 from pathlib import Path
 
 def run_command(command, error_message):
-    try:
-        subprocess.run(command, check=True)
-    except subprocess.CalledProcessError:
-        print(f"❌ {error_message}")
-        sys.exit(1)
+   try:
+       subprocess.run(command, check=True)
+   except subprocess.CalledProcessError:
+       print(f"❌ {error_message}")
+       sys.exit(1)
 
 def get_changed_directories():
-    \"""Get directories with changes that are being pushed.\"""
-    try:
-        # Get list of changed files that are being pushed
-        changed_files = subprocess.check_output(
-            ['git', 'diff', '--name-only', '--cached', 'HEAD'],
-            universal_newlines=True
-        ).splitlines()
+   \"""Get directories with changes that are being pushed.\"""
+   try:
+       # Get staged changes
+       staged_files = subprocess.check_output(
+           ['git', 'diff', '--name-only', '--cached'],
+           universal_newlines=True
+       ).splitlines()
+       
+       # Get unstaged changes
+       unstaged_files = subprocess.check_output(
+           ['git', 'diff', '--name-only'],
+           universal_newlines=True
+       ).splitlines()
+       
+       # Get untracked files
+       untracked_files = subprocess.check_output(
+           ['git', 'ls-files', '--others', '--exclude-standard'],
+           universal_newlines=True
+       ).splitlines()
 
-        # Get unique directories containing changes
-        changed_dirs = set()
-        for file in changed_files:
-            # Get the root directory of the change
-            parts = Path(file).parts
-            if len(parts) > 0:
-                changed_dirs.add(parts[0])
+       # Combine all changes
+       all_changed_files = staged_files + unstaged_files + untracked_files
 
-        return changed_dirs
-    except subprocess.CalledProcessError:
-        print("❌ Failed to get changed files")
-        return set()
+       # Get unique directories containing changes
+       changed_dirs = set()
+       for file in all_changed_files:
+           parts = Path(file).parts
+           if len(parts) > 0:
+               changed_dirs.add(parts[0])
+
+       return changed_dirs
+   except subprocess.CalledProcessError:
+       print("❌ Failed to get changed files")
+       return set()
 
 def check_github_issue_reference():
-    # Get current branch name
-    try:
-        branch_name = subprocess.check_output(
-            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
-            universal_newlines=True
-        ).strip()
-    except subprocess.CalledProcessError:
-        print("❌ Failed to get current branch name")
-        return False
+   try:
+       # Get current branch name
+       branch_name = subprocess.check_output(
+           ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+           universal_newlines=True
+       ).strip()
 
-    # Get commit message (for commits)
-    try:
-        commit_msg_file = sys.argv[1] if len(sys.argv) > 1 else None
-        if commit_msg_file and os.path.exists(commit_msg_file):
-            with open(commit_msg_file, 'r') as f:
-                commit_msg = f.read()
-        else:
-            commit_msg = ""
-    except Exception:
-        commit_msg = ""
+       # Get last commit message
+       commit_msg = subprocess.check_output(
+           ['git', 'log', '-1', '--pretty=%B'],
+           universal_newlines=True
+       ).strip()
+   except subprocess.CalledProcessError:
+       print("❌ Failed to get branch name or commit message")
+       return False
 
-    # Patterns to match issue references
-    issue_patterns = [
-        r'#\\d+',                    # #123
-        r'GH-\\d+',                  # GH-123
-        r'issue-\\d+',               # issue-123
-        r'feature/(?:GH-)?#?\\d+'    # feature/GH-123 or feature/#123
-    ]
+   # Patterns to match issue references
+   issue_patterns = [
+       r'#\\d+',                    # #123
+       r'issue-\\d+',               # issue-123
+       r'feature/(?:GH-)?#?\\d+',   # feature/GH-123 or feature/#123
+       r'[a-zA-Z-]+\\d+'           # issue7 or automated7
+   ]
 
-    # Check branch name
-    branch_has_issue = any(re.search(pattern, branch_name) for pattern in issue_patterns)
+   # Check branch name
+   branch_has_issue = any(re.search(pattern, branch_name) for pattern in issue_patterns)
+   
+   # Check commit message
+   commit_has_issue = any(re.search(pattern, commit_msg) for pattern in issue_patterns)
 
-    # Check commit message
-    commit_has_issue = any(re.search(pattern, commit_msg) for pattern in issue_patterns)
-
-    if not (branch_has_issue or commit_has_issue):
-        print("❌ No GitHub issue reference found in branch name or commit message.")
-        print("Please include an issue reference (e.g., #123, GH-123, issue-123)")
-        print(f"Current branch: {branch_name}")
-        return False
-
-    return True
+   if not (branch_has_issue or commit_has_issue):
+       print("❌ No GitHub issue reference found in branch name or commit message.")
+       print("Please include an issue reference (e.g., #123, GH-123, issue-123)")
+       print(f"Current branch: {branch_name}")
+       print(f"Commit message: {commit_msg}")
+       return False
+   
+   return True
 
 def main():
-    # Get project root directory (where .git is)
-    project_root = subprocess.check_output(
-        ['git', 'rev-parse', '--show-toplevel'],
-        universal_newlines=True
-    ).strip()
+   # Get project root directory (where .git is)
+   project_root = subprocess.check_output(
+       ['git', 'rev-parse', '--show-toplevel'],
+       universal_newlines=True
+   ).strip()
 
-    # Get directories with changes
-    changed_dirs = get_changed_directories()
-    if not changed_dirs:
-        print("No changes detected to check")
-        return 0
+   # Get directories with changes
+   changed_dirs = get_changed_directories()
+   if not changed_dirs:
+       print("No changes detected to check")
+       return 0
 
-    # Find gradlew files only in changed directories
-    gradlew_paths = []
-    for changed_dir in changed_dirs:
-        service_path = os.path.join(project_root, changed_dir)
-        gradlew_path = os.path.join(service_path, 'gradlew')
-        if os.path.exists(gradlew_path):
-            gradlew_paths.append(gradlew_path)
+   # Find gradlew files only in changed directories
+   gradlew_paths = []
+   for changed_dir in changed_dirs:
+       service_path = os.path.join(project_root, changed_dir)
+       gradlew_path = os.path.join(service_path, 'gradlew')
+       if os.path.exists(gradlew_path):
+           gradlew_paths.append(gradlew_path)
 
-    if not gradlew_paths:
-        print("❌ No Gradle projects found in changed directories.")
-        sys.exit(1)
+   if not gradlew_paths:
+       print("❌ No Gradle projects found in changed directories.")
+       sys.exit(1)
 
-    # First check for GitHub issue reference
-    if not check_github_issue_reference():
-        sys.exit(1)
+   # First check for GitHub issue reference
+   if not check_github_issue_reference():
+       sys.exit(1)
 
-    print("Running pre-push checks...")
+   print("Running pre-push checks...")
 
-    # Run checks for each changed service with gradlew
-    for gradlew_path in gradlew_paths:
-        service_dir = os.path.dirname(gradlew_path)
-        service_name = os.path.basename(service_dir)
-        print(f"\\nRunning checks for {service_name}...")
+   # Run checks for each changed service with gradlew
+   for gradlew_path in gradlew_paths:
+       service_dir = os.path.dirname(gradlew_path)
+       service_name = os.path.basename(service_dir)
+       print(f"\\nRunning checks for {service_name}...")
+       
+       # Make gradlew executable
+       Path(gradlew_path).chmod(Path(gradlew_path).stat().st_mode | stat.S_IEXEC)
+       
+       # Change to service directory
+       os.chdir(service_dir)
 
-        # Make gradlew executable
-        Path(gradlew_path).chmod(Path(gradlew_path).stat().st_mode | stat.S_IEXEC)
+       # Define checks as tuples of (command, error message)
+       checks = [
+           (
+               [gradlew_path, 'checkstyleMain', 'checkstyleTest'],
+               f"Checkstyle failed in {service_name}. Please fix style issues before pushing."
+           ),
+           (
+               [gradlew_path, 'test'],
+               f"Unit tests failed in {service_name}. Please fix failing tests before pushing."
+           ),
+           (
+               [gradlew_path, 'integrationTest'],
+               f"Integration tests failed in {service_name}. Please fix failing tests before pushing."
+           ),
+           (
+               [gradlew_path, 'jacocoTestCoverageVerification'],
+               f"Code coverage is below threshold in {service_name}. Please add more tests before pushing."
+           ),
+           (
+               [gradlew_path, 'dependencyCheckAnalyze'],
+               f"Dependency audit failed in {service_name}. Please review and fix security issues."
+           )
+       ]
 
-        # Change to service directory
-        os.chdir(service_dir)
+       # Run all checks
+       for command, error_msg in checks:
+           print(f"Running {command[1]}...")
+           run_command(command, error_msg)
 
-        # Define checks as tuples of (command, error message)
-        checks = [
-            (
-                [gradlew_path, 'checkstyleMain', 'checkstyleTest'],
-                f"Checkstyle failed in {service_name}. Please fix style issues before pushing."
-            ),
-            (
-                [gradlew_path, 'test'],
-                f"Unit tests failed in {service_name}. Please fix failing tests before pushing."
-            ),
-            (
-                [gradlew_path, 'integrationTest'],
-                f"Integration tests failed in {service_name}. Please fix failing tests before pushing."
-            ),
-            (
-                [gradlew_path, 'jacocoTestCoverageVerification'],
-                f"Code coverage is below threshold in {service_name}. Please add more tests before pushing."
-            ),
-            (
-                [gradlew_path, 'dependencyCheckAnalyze'],
-                f"Dependency audit failed in {service_name}. Please review and fix security issues."
-            )
-        ]
-
-        # Run all checks
-        for command, error_msg in checks:
-            print(f"Running {command[1]}...")
-            run_command(command, error_msg)
-
-    print("✅ All checks passed!")
-    return 0
+   print("✅ All checks passed!")
+   return 0
 
 if __name__ == '__main__':
-    sys.exit(main())
+   sys.exit(main())
 """
         return pre_push_content
 
