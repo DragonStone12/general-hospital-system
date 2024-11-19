@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  patient-service:
+    build:
+      context: ../patient-service
+      dockerfile: Dockerfile
+    container_name: patient-service
+    ports:
+      - "8001:8001"
+    environment:
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+    env_file:
+      - .env
+    networks:
+      - general-hospital-network
+networks:
+  general-hospital-network:
+    name: general-hospital-network
