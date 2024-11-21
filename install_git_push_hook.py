@@ -155,12 +155,15 @@ def main():
        # Change to service directory
        os.chdir(service_dir)
 
-       # Define checks as tuples of (command, error message)
-       checks = [
-           (
-               [gradlew_path, 'checkstyleMain', 'checkstyleTest'],
-               f"Checkstyle failed in {service_name}. Please fix style issues before pushing."
-           ),
+       # Build check first
+       print(f"Building {service_name}...")
+       build_command = ([gradlew_path, 'build', '-x', 'test', '-x', 'integrationTest', '-x', 'jacocoTestReport', 
+                        '-x', 'jacocoTestCoverageVerification', '-x', 'dependencyCheckAnalyze'], 
+                       f"Build failed in {service_name}. Please fix build issues before pushing.")
+       run_command(*build_command)
+
+       # Define test checks
+       test_checks = [
            (
                [gradlew_path, 'test'],
                f"Unit tests failed in {service_name}. Please fix failing tests before pushing."
@@ -176,15 +179,11 @@ def main():
            (
                [gradlew_path, 'dependencyCheckAnalyze'],
                f"Dependency audit failed in {service_name}. Please review and fix security issues."
-           ),
-           (
-               [gradlew_path, 'build'],
-               f"Build failed in {service_name}. Please fix build issues before pushing."
            )
        ]
 
-       # Run all checks
-       for command, error_msg in checks:
+       # Run test checks
+       for command, error_msg in test_checks:
            print(f"Running {command[1]}...")
            run_command(command, error_msg)
 
