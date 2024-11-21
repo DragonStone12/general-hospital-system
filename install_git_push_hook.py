@@ -176,6 +176,10 @@ def main():
            (
                [gradlew_path, 'dependencyCheckAnalyze'],
                f"Dependency audit failed in {service_name}. Please review and fix security issues."
+           ),
+           (
+               [gradlew_path, 'build'],
+               f"Build failed in {service_name}. Please fix build issues before pushing."
            )
        ]
 
