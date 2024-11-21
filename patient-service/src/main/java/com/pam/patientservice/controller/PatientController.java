@@ -22,7 +22,7 @@ public class PatientController {
         return ResponseEntity.status(HttpStatus.CREATED).body("Created");
     }
 
-    @GetMapping
+    @GetMapping("/{id}")
     public ResponseEntity<String> getPatientById(@PathVariable(name = "id") Long id) {
         log.info("id" + id);
         return ResponseEntity.ok("Got him");
