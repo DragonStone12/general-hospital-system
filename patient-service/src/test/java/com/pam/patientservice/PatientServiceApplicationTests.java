@@ -9,10 +9,8 @@ import static org.springframework.test.util.AssertionErrors.assertEquals;
 class PatientServiceApplicationTests {
 
 	@Test
-	void testArrayOperations() {
-		int[] numbers = {1, 2, 3, 4, 5};
-		assertEquals("Array length should be 5", 5, numbers.length);
-		assertEquals("First element should be 1", 1, numbers[0]);
-		assertEquals("Last element should be 5", 5, numbers[4]);
+	void main_shouldStartApplication() {
+		// Test the main method
+		PatientServiceApplication.main(new String[]{});
 	}
 }
