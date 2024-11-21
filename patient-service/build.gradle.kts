@@ -9,7 +9,6 @@ plugins {
 group = "com.pam"
 version = "0.0.1-SNAPSHOT"
 
-
 jacoco {
 	toolVersion = "0.8.11"
 }
