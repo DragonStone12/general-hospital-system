@@ -10,7 +10,6 @@ class PatientServiceApplicationTests {
 
 	@Test
 	void main_shouldStartApplication() {
-		// Test the main method
 		PatientServiceApplication.main(new String[]{});
 	}
 }
