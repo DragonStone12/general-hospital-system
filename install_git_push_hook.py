@@ -105,6 +105,7 @@ def main():
         universal_newlines=True
     ).strip()
 
+    # Get files that are changed in commits being pushed
     changed_dirs = get_branch_files()
     if not changed_dirs:
         print("No changes detected to check")
@@ -120,7 +121,8 @@ def main():
 
     if not gradlew_paths:
         print("No Gradle projects found in changed directories.")
-        sys.exit(1)
+        print("Skipping Gradle checks...")
+        return 0  # Allow push to proceed
 
     # Check for GitHub issue reference
     if not check_github_issue_reference():
