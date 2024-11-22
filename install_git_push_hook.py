@@ -39,37 +39,40 @@ def run_command(command, error_message):
         print(f"Error output: {e.stderr}")
         sys.exit(1)
 
-def get_changed_files():
+def get_branch_files():
     try:
-        # Get files changed in commits being pushed
-        changed_files = subprocess.check_output(
-            ['git', 'diff', '--name-only', 'origin/master', '--', 'HEAD'],
+        # Get all files in the current branch's commits
+        files = subprocess.check_output(
+            ['git', 'diff', '--name-only', '@{u}..HEAD'] if has_upstream() else ['git', 'diff', '--name-only'],
             universal_newlines=True
         ).splitlines()
 
-        # Get unique directories containing changed files
-        changed_dirs = set()
-        for file in changed_files:
+        dirs = set()
+        for file in files:
             parts = Path(file).parts
-            if len(parts) > 0:
-                changed_dirs.add(parts[0])
-
-        return changed_dirs
+            if parts:
+                dirs.add(parts[0])
+        return dirs
     except subprocess.CalledProcessError as e:
-        print(f"❌ Failed to get changed files: {e}")
+        print(f"❌ Failed to get branch files: {e}")
         return set()
+
+def has_upstream():
+    try:
+        subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', '@{u}'], stderr=subprocess.DEVNULL)
+        return True
+    except subprocess.CalledProcessError:
+        return False
 
 def check_github_issue_reference():
     try:
-        # Get current branch name
         branch_name = subprocess.check_output(
             ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
             universal_newlines=True
         ).strip()
 
-        # Get commit messages for commits being pushed
         commit_msgs = subprocess.check_output(
-            ['git', 'log', 'origin/master..HEAD', '--pretty=%B'],
+            ['git', 'log', '@{u}..HEAD', '--pretty=%B'] if has_upstream() else ['git', 'log', '--pretty=%B'],
             universal_newlines=True
         ).strip()
     except subprocess.CalledProcessError:
@@ -84,10 +87,8 @@ def check_github_issue_reference():
         r'[a-zA-Z-]+\\d+'           # issue7 or automated7
     ]
 
-    # Check branch name
+    # Check branch name and commit messages
     branch_has_issue = any(re.search(pattern, branch_name) for pattern in issue_patterns)
-
-    # Check commit messages
     commits_have_issue = any(re.search(pattern, commit_msgs) for pattern in issue_patterns)
 
     if not (branch_has_issue or commits_have_issue):
@@ -99,19 +100,17 @@ def check_github_issue_reference():
     return True
 
 def main():
-    # Get project root directory (where .git is)
     project_root = subprocess.check_output(
         ['git', 'rev-parse', '--show-toplevel'],
         universal_newlines=True
     ).strip()
 
-    # Get files that are changed in commits being pushed
-    changed_dirs = get_changed_files()
+    changed_dirs = get_branch_files()
     if not changed_dirs:
         print("No changes detected to check")
         return 0
 
-    # Find gradlew files only in changed directories
+    # Find gradlew files in changed directories
     gradlew_paths = []
     for changed_dir in changed_dirs:
         service_path = os.path.join(project_root, changed_dir)
@@ -123,7 +122,7 @@ def main():
         print("No Gradle projects found in changed directories.")
         sys.exit(1)
 
-    # First check for GitHub issue reference
+    # Check for GitHub issue reference
     if not check_github_issue_reference():
         sys.exit(1)
 
