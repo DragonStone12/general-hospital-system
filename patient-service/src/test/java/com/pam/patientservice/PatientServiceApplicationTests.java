@@ -11,5 +11,6 @@ class PatientServiceApplicationTests {
 	@Test
 	void main_shouldStartApplication() {
 		PatientServiceApplication.main(new String[]{});
+
 	}
 }

@@ -160,10 +160,10 @@ def main():
                 [gradlew_path, 'jacocoTestCoverageVerification', '--stacktrace'],
                 f"Code coverage is below threshold in {service_name}. Please add more tests before pushing."
             ),
-            # (
-            #     [gradlew_path, 'dependencyCheckAnalyze', '--stacktrace'],
-            #     f"Dependency audit failed in {service_name}. Please review and fix security issues."
-            # ),
+            (
+                [gradlew_path, 'dependencyCheckAnalyze', '--stacktrace'],
+                f"Dependency audit failed in {service_name}. Please review and fix security issues."
+            ),
             (
                 [gradlew_path, 'build', '--stacktrace'],
                 f"Build failed in {service_name}. Please fix build issues before pushing."
