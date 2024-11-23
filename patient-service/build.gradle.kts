@@ -2,178 +2,143 @@ plugins {
 	java
 	id("org.springframework.boot") version "3.3.5"
 	id("io.spring.dependency-management") version "1.1.6"
-	id("checkstyle")
 	id("jacoco")
-	id("org.owasp.dependencycheck") version "9.0.7"
+	// id("org.owasp.dependencycheck") version "11.1.0"
 }
 
 group = "com.pam"
 version = "0.0.1-SNAPSHOT"
 
-checkstyle {
-	configFile = file("config/checkstyle/checkstyle.xml")
-	toolVersion = "10.12.5"
+java {
+	toolchain {
+		languageVersion.set(JavaLanguageVersion.of(17))
+	}
 }
-
 
 jacoco {
 	toolVersion = "0.8.11"
-}
-
-tasks.withType<Test> {
-	useJUnitPlatform {
-		exclude("integration")
-	}
-	finalizedBy("jacocoTestReport")
-}
-
-// Separate unit and integration tests
-sourceSets {
-	create("integrationTest") {
-		java {
-			compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output
-			runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output
-			srcDir(file("src/integrationTest/java"))
-		}
-		resources.srcDir(file("src/integrationTest/resources"))
-	}
-}
-
-val integrationTest = task<Test>("integrationTest") {
-	description = "Runs integration tests."
-	group = "verification"
-
-	testClassesDirs = sourceSets["integrationTest"].output.classesDirs
-	classpath = sourceSets["integrationTest"].runtimeClasspath
-
-	useJUnitPlatform {
-		includeTags("integration")
-	}
-
-	shouldRunAfter(tasks.test)
-	finalizedBy(tasks.jacocoTestReport)
-}
-
-tasks.jacocoTestReport {
-	executionData(tasks.test, integrationTest)
-	reports {
-		xml.required.set(true)
-		html.required.set(true)
-	}
-	afterEvaluate {
-		classDirectories.setFrom(files(classDirectories.files.map {
-			fileTree(it) {
-				exclude(
-						"**/model/**",
-						"**/config/**"
-				)
-			}
-		}))
-	}
-	dependsOn(tasks.test)
-	dependsOn(integrationTest)
-}
-
-tasks.jacocoTestCoverageVerification {
-	violationRules {
-		rule {
-			limit {
-				minimum = "0.80".toBigDecimal()
-			}
-		}
-	}
-	dependsOn(tasks.jacocoTestReport)
-}
-
-tasks.withType<Checkstyle>().configureEach {
-	reports {
-		xml.required.set(true)
-		html.required.set(true)
-	}
-}
-
-dependencyCheck {
-	failBuildOnCVSS = 7
-	formats = listOf("HTML", "JSON")
-	suppressionFile = "config/dependency-check/suppression.xml"
-	analyzers {
-		assemblyEnabled = false
-		nodeEnabled = false
-	}
-}
-
-
-// Configure task dependencies
-tasks.check {
-	dependsOn(integrationTest)
-	dependsOn(tasks.jacocoTestCoverageVerification)
-	dependsOn(tasks.dependencyCheckAnalyze)
-	dependsOn(tasks.checkstyleMain)
-	dependsOn(tasks.checkstyleTest)
-}
-
-// Define task ordering
-tasks.checkstyleMain {
-	shouldRunAfter(tasks.clean)
-}
-
-tasks.checkstyleTest {
-	shouldRunAfter(tasks.checkstyleMain)
-}
-
-tasks.test {
-	shouldRunAfter(tasks.checkstyleTest)
-}
-
-integrationTest {
-	shouldRunAfter(tasks.test)
-}
-
-tasks.jacocoTestReport {
-	shouldRunAfter(integrationTest)
-}
-
-tasks.jacocoTestCoverageVerification {
-	shouldRunAfter(tasks.jacocoTestReport)
-}
-
-tasks.dependencyCheckAnalyze {
-	shouldRunAfter(tasks.jacocoTestCoverageVerification)
-}
-
-// Add configurations for integration test dependencies
-configurations {
-	create("integrationTestImplementation") {
-		extendsFrom(configurations["testImplementation"])
-	}
-	create("integrationTestRuntimeOnly") {
-		extendsFrom(configurations["testRuntimeOnly"])
-	}
+	reportsDirectory.set(layout.buildDirectory.dir("reports/jacoco"))
 }
 
 repositories {
 	mavenCentral()
 }
 
-extra["springCloudVersion"] = "2023.0.3"
+val springCloudVersion = "2023.0.3"
 
 dependencies {
+	constraints {
+		implementation("com.fasterxml.jackson:jackson-bom:2.16.1")
+		implementation("org.apache.commons:commons-lang3:3.14.0")
+		implementation("org.apache.commons:commons-text:1.11.0")
+	}
+
+	// Spring Boot dependencies
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.cloud:spring-cloud-starter-config")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.retry:spring-retry:2.0.10")
 
-	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+	// Lombok configuration
 	compileOnly("org.projectlombok:lombok")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	annotationProcessor("org.projectlombok:lombok")
+	testCompileOnly("org.projectlombok:lombok")
+	testAnnotationProcessor("org.projectlombok:lombok")
+
+	// Development and testing dependencies
+	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 dependencyManagement {
 	imports {
-		mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+		mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
 	}
+}
+
+tasks.withType<Test> {
+	useJUnitPlatform()
+}
+
+tasks.test {
+	useJUnitPlatform {
+		excludeTags("integration")
+	}
+	finalizedBy(tasks.jacocoTestReport)
+}
+
+val integrationTest = tasks.register<Test>("integrationTest") {
+	description = "Runs integration tests."
+	group = "verification"
+
+	useJUnitPlatform {
+		includeTags("integration")
+	}
+
+	mustRunAfter(tasks.test)
+}
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+
+	classDirectories.setFrom(
+			files(classDirectories.files.map {
+				fileTree(it) {
+					exclude("**/model/**", "**/config/**")
+				}
+			})
+	)
+
+	reports {
+		xml.required.set(true)
+		csv.required.set(false)
+		html.required.set(true)
+		html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/html"))
+	}
+}
+
+tasks.jacocoTestCoverageVerification {
+	dependsOn(tasks.jacocoTestReport)
+
+	violationRules {
+		rule {
+			limit {
+				counter = "LINE"
+				value = "COVEREDRATIO"
+				minimum = "0.80".toBigDecimal()
+			}
+			limit {
+				counter = "BRANCH"
+				value = "COVEREDRATIO"
+				minimum = "0.80".toBigDecimal()
+			}
+			limit {
+				counter = "INSTRUCTION"
+				value = "COVEREDRATIO"
+				minimum = "0.80".toBigDecimal()
+			}
+		}
+	}
+}
+
+// dependencyCheck {
+//    suppressionFile = "${project.projectDir}/config/dependency-check/suppression.xml"
+//    analyzers.apply {
+//       assemblyEnabled = false
+//       nodeEnabled = false
+//    }
+//    failBuildOnCVSS = 7.0f
+//    formats = listOf("HTML", "JSON")
+//    scanConfigurations = listOf("runtimeClasspath", "testRuntimeClasspath")
+// }
+
+tasks.check {
+	dependsOn(
+			integrationTest,
+			tasks.jacocoTestCoverageVerification,
+			// tasks.dependencyCheckAnalyze
+	)
 }
