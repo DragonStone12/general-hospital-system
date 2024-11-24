@@ -2,9 +2,6 @@
 import os
 import stat
 import subprocess
-import sys
-import re
-from pathlib import Path
 
 class GitHookInstallationError(Exception):
     """Custom exception for git hook installation errors."""
@@ -160,10 +157,14 @@ def main():
                 [gradlew_path, 'jacocoTestCoverageVerification', '--stacktrace'],
                 f"Code coverage is below threshold in {service_name}. Please add more tests before pushing."
             ),
-            # (
-            #     [gradlew_path, 'dependencyCheckAnalyze', '--stacktrace'],
-            #     f"Dependency audit failed in {service_name}. Please review and fix security issues."
-            # ),
+            (
+                [gradlew_path, 'spotbugsMain', '--stacktrace'],
+                f"SpotBugs found issues in {service_name}. Check the report at build/reports/spotbugs/main.xml"
+            ),
+             (
+                [gradlew_path, 'spotbugsTest', '--stacktrace'],
+                f"SpotBugs found issues in {service_name}. Check the report at build/reports/spotbugs/main.xml"
+            ),
             (
                 [gradlew_path, 'build', '--stacktrace'],
                 f"Build failed in {service_name}. Please fix build issues before pushing."

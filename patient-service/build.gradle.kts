@@ -3,11 +3,12 @@ plugins {
 	id("org.springframework.boot") version "3.3.5"
 	id("io.spring.dependency-management") version "1.1.6"
 	id("jacoco")
-	// id("org.owasp.dependencycheck") version "11.1.0"
+	id("com.github.spotbugs") version "6.0.18"
 }
 
 group = "com.pam"
 version = "0.0.1-SNAPSHOT"
+
 
 java {
 	toolchain {
@@ -124,21 +125,9 @@ tasks.jacocoTestCoverageVerification {
 	}
 }
 
-// dependencyCheck {
-//    suppressionFile = "${project.projectDir}/config/dependency-check/suppression.xml"
-//    analyzers.apply {
-//       assemblyEnabled = false
-//       nodeEnabled = false
-//    }
-//    failBuildOnCVSS = 7.0f
-//    formats = listOf("HTML", "JSON")
-//    scanConfigurations = listOf("runtimeClasspath", "testRuntimeClasspath")
-// }
-
 tasks.check {
 	dependsOn(
 			integrationTest,
 			tasks.jacocoTestCoverageVerification,
-			// tasks.dependencyCheckAnalyze
 	)
 }
