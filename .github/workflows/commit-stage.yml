@@ -1,6 +1,9 @@
 name: Commit Stage
 on: push
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: true
+
 jobs:
   detect-changes:
     runs-on: ubuntu-22.04
@@ -9,7 +12,7 @@ jobs:
       config-service: ${{ steps.filter.outputs.config-service }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
