@@ -251,10 +251,12 @@ jobs:
 
       - name: Validate Kubernetes manifests
         if: steps.should-run.outputs.should_run == 'true'
-        uses: docker://ghcr.io/yannh/kubeconform:latest
-        with:
-          entrypoint: '/kubeconform'
-          args: '-summary -output json ${{ matrix.service }}/k8s > validation-results/validation.json'
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/${{ matrix.service }}/k8s:/k8s \
+            -v ${{ github.workspace }}/validation-results:/results \
+            ghcr.io/yannh/kubeconform:latest \
+            -summary -output json /k8s > validation-results/validation.json
 
       - name: Upload validation results
         if: steps.should-run.outputs.should_run == 'true' && always()
