@@ -23,7 +23,8 @@ jobs:
     strategy:
       matrix:
         service: [patient-service, config-service]
-    if: (matrix.service == 'patient-service' && needs.detect-changes.outputs.patient-service == 'true') ||
+    if: |
+      (matrix.service == 'patient-service' && needs.detect-changes.outputs.patient-service == 'true') ||
       (matrix.service == 'config-service' && needs.detect-changes.outputs.config-service == 'true')
     name: Build and Test ${{ matrix.service }}
     runs-on: ubuntu-22.04
@@ -70,7 +71,8 @@ jobs:
     strategy:
       matrix:
         service: [patient-service, config-service]
-    if: (matrix.service == 'patient-service' && needs.detect-changes.outputs.patient-service == 'true') ||
+    if: |
+      (matrix.service == 'patient-service' && needs.detect-changes.outputs.patient-service == 'true') ||
       (matrix.service == 'config-service' && needs.detect-changes.outputs.config-service == 'true')
     name: SpotBugs Analysis ${{ matrix.service }}
     runs-on: ubuntu-22.04
@@ -108,7 +110,8 @@ jobs:
     strategy:
       matrix:
         service: [patient-service, config-service]
-    if: (matrix.service == 'patient-service' && needs.detect-changes.outputs.patient-service == 'true') ||
+    if: |
+      (matrix.service == 'patient-service' && needs.detect-changes.outputs.patient-service == 'true') ||
       (matrix.service == 'config-service' && needs.detect-changes.outputs.config-service == 'true')
     name: Security Scan ${{ matrix.service }}
     runs-on: ubuntu-22.04
@@ -150,7 +153,8 @@ jobs:
     strategy:
       matrix:
         service: [patient-service, config-service]
-    if: (matrix.service == 'patient-service' && needs.detect-changes.outputs.patient-service == 'true') ||
+    if: |
+      (matrix.service == 'patient-service' && needs.detect-changes.outputs.patient-service == 'true') ||
       (matrix.service == 'config-service' && needs.detect-changes.outputs.config-service == 'true')
     runs-on: ubuntu-22.04
     permissions:
