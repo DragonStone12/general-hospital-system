@@ -207,7 +207,7 @@ jobs:
 
       - name: Download All Reports
         if: steps.should-run.outputs.should_run == 'true'
-        uses: actions/download-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: all-reports
 
