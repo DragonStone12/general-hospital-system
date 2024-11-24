@@ -1,0 +1,165 @@
+name: Commit Stage
+on: push
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-22.04
+    outputs:
+      patient-service: ${{ steps.filter.outputs.patient-service }}
+      config-service: ${{ steps.filter.outputs.config-service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            patient-service:
+              - 'patient-service/**'
+            config-service:
+              - 'config-service/**'
+
+  build-and-test:
+    needs: detect-changes
+    strategy:
+      matrix:
+        service: [patient-service, config-service]
+    if: ${{ needs.detect-changes.outputs[matrix.service] == 'true' }}
+    name: Build and Test ${{ matrix.service }}
+    runs-on: ubuntu-22.04
+    environment: development
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Build, unit tests and integration tests
+        working-directory: ${{ matrix.service }}
+        run: |
+          chmod +x gradlew
+          ./gradlew check
+
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-reports-${{ matrix.service }}
+          path: |
+            ${{ matrix.service }}/build/reports/tests/test/
+            ${{ matrix.service }}/build/reports/tests/integrationTest/
+            ${{ matrix.service }}/build/reports/jacoco/test/html/
+          retention-days: 1
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts-${{ matrix.service }}
+          path: ${{ matrix.service }}/build/libs/
+          retention-days: 1
+
+  spotbugs-analysis:
+    needs: build-and-test
+    strategy:
+      matrix:
+        service: [patient-service, config-service]
+    if: ${{ needs.detect-changes.outputs[matrix.service] == 'true' }}
+    name: SpotBugs Analysis ${{ matrix.service }}
+    runs-on: ubuntu-22.04
+    environment: development
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Run SpotBugs
+        working-directory: ${{ matrix.service }}
+        run: |
+          chmod +x gradlew
+          ./gradlew spotbugsMain spotbugsTest
+
+      - name: Upload SpotBugs Reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: spotbugs-reports-${{ matrix.service }}
+          path: |
+            ${{ matrix.service }}/build/reports/spotbugs/
+          retention-days: 1
+
+  security-scan:
+    needs: [build-and-test, spotbugs-analysis]
+    strategy:
+      matrix:
+        service: [patient-service, config-service]
+    if: ${{ needs.detect-changes.outputs[matrix.service] == 'true' }}
+    name: Security Scan ${{ matrix.service }}
+    runs-on: ubuntu-22.04
+    environment: development
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Code vulnerability scanning
+        uses: anchore/scan-action@v3
+        id: scan
+        with:
+          path: "${{ github.workspace }}/${{ matrix.service }}"
+          fail-build: false
+          severity-cutoff: high
+          output-format: table,sarif
+
+      - name: Upload Anchore scan SARIF report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+
+      - name: Upload Security Reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports-${{ matrix.service }}
+          path: |
+            ${{ steps.scan.outputs.sarif }}
+            ${{ matrix.service }}/build/reports/dependency-check-report.html
+          retention-days: 1
+
+  report-upload:
+    name: Upload Combined Reports
+    needs: [security-scan, detect-changes]
+    strategy:
+      matrix:
+        service: [patient-service, config-service]
+    if: ${{ needs.detect-changes.outputs[matrix.service] == 'true' }}
+    runs-on: ubuntu-22.04
+    permissions:
+      security-events: write
+    steps:
+      - name: Download All Reports
+        uses: actions/download-artifact@v3
+        with:
+          path: all-reports
+
+      - name: Upload Combined Reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: all-reports-${{ matrix.service }}
+          path: all-reports
+          retention-days: 7
