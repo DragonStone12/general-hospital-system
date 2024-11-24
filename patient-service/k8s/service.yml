@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: patient-service
+  labels:
+    app: patient-service
+spec:
+  type: ClusterIP
+  selector:
+    app: patient-service
+  ports:
+    - name: app
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: management
+      protocol: TCP
+      port: 8001
+      targetPort: 8001
+    - name: debug
+      protocol: TCP
+      port: 5005
+      targetPort: 5005

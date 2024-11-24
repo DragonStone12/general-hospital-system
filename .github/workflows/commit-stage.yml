@@ -67,7 +67,7 @@ jobs:
 
       - name: Upload Test Reports
         if: steps.should-run.outputs.should_run == 'true' && always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-reports-${{ matrix.service }}
           path: |
@@ -78,7 +78,7 @@ jobs:
 
       - name: Upload Build Artifacts
         if: steps.should-run.outputs.should_run == 'true'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifacts-${{ matrix.service }}
           path: ${{ matrix.service }}/build/libs/
@@ -126,7 +126,7 @@ jobs:
 
       - name: Upload SpotBugs Reports
         if: steps.should-run.outputs.should_run == 'true' && always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: spotbugs-reports-${{ matrix.service }}
           path: |
@@ -177,7 +177,7 @@ jobs:
 
       - name: Upload Security Reports
         if: steps.should-run.outputs.should_run == 'true' && always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-reports-${{ matrix.service }}
           path: |
@@ -207,14 +207,61 @@ jobs:
 
       - name: Download All Reports
         if: steps.should-run.outputs.should_run == 'true'
-        uses: actions/download-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: all-reports
 
       - name: Upload Combined Reports
         if: steps.should-run.outputs.should_run == 'true'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: all-reports-${{ matrix.service }}
           path: all-reports
+          retention-days: 7
+
+  validate:
+    name: Validate Kubernetes Manifests
+    needs: detect-changes
+    strategy:
+      matrix:
+        service: [ patient-service, config-service ]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check if service should run
+        id: should-run
+        run: |
+          if [[ "${{ matrix.service }}" == "patient-service" && "${{ needs.detect-changes.outputs.patient-service }}" == "true" ]] || \
+             [[ "${{ matrix.service }}" == "config-service" && "${{ needs.detect-changes.outputs.config-service }}" == "true" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout source code
+        if: steps.should-run.outputs.should_run == 'true'
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        if: steps.should-run.outputs.should_run == 'true'
+        run: echo "${{ github.token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Create results directory
+        if: steps.should-run.outputs.should_run == 'true'
+        run: mkdir -p validation-results
+
+      - name: Validate Kubernetes manifests
+        if: steps.should-run.outputs.should_run == 'true'
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/${{ matrix.service }}/k8s:/k8s \
+            -v ${{ github.workspace }}/validation-results:/results \
+            ghcr.io/yannh/kubeconform:latest \
+            -summary -output json /k8s > validation-results/validation.json
+
+      - name: Upload validation results
+        if: steps.should-run.outputs.should_run == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8s-validation-results-${{ matrix.service }}
+          path: validation-results/validation.json
           retention-days: 7
