@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         service: [patient-service, config-service]
-    if: ${{ needs.detect-changes.outputs[matrix.service] == 'true' }}
+    if: ${{ needs.detect-changes.outputs[format('{0}', matrix.service)] == 'true' }}
     name: Build and Test ${{ matrix.service }}
     runs-on: ubuntu-22.04
     environment: development
@@ -69,7 +69,7 @@ jobs:
     strategy:
       matrix:
         service: [patient-service, config-service]
-    if: ${{ needs.detect-changes.outputs[matrix.service] == 'true' }}
+    if: ${{ needs.detect-changes.outputs[format('{0}', matrix.service)] == 'true' }}
     name: SpotBugs Analysis ${{ matrix.service }}
     runs-on: ubuntu-22.04
     environment: development
@@ -106,7 +106,7 @@ jobs:
     strategy:
       matrix:
         service: [patient-service, config-service]
-    if: ${{ needs.detect-changes.outputs[matrix.service] == 'true' }}
+    if: ${{ needs.detect-changes.outputs[format('{0}', matrix.service)] == 'true' }}
     name: Security Scan ${{ matrix.service }}
     runs-on: ubuntu-22.04
     environment: development
@@ -147,7 +147,7 @@ jobs:
     strategy:
       matrix:
         service: [patient-service, config-service]
-    if: ${{ needs.detect-changes.outputs[matrix.service] == 'true' }}
+    if: ${{ needs.detect-changes.outputs[format('{0}', matrix.service)] == 'true' }}
     runs-on: ubuntu-22.04
     permissions:
       security-events: write
