@@ -218,3 +218,36 @@ jobs:
           name: all-reports-${{ matrix.service }}
           path: all-reports
           retention-days: 7
+
+    validate:
+      name: Validate Kubernetes Manifests
+      runs-on: ubuntu-22.04
+      steps:
+        - name: Checkout source code
+          uses: actions/checkout@v4
+
+        - name: Install kubeconform
+          run: |
+            wget https://github.com/yannh/kubeconform/releases/download/v1.5.0/kubeconform-linux-amd64.tar.gz
+            tar xf kubeconform-linux-amd64.tar.gz
+            sudo mv kubeconform /usr/local/bin/
+            rm kubeconform-linux-amd64.tar.gz
+
+        - name: Create results directory
+          run: mkdir -p validation-results
+
+        - name: Validate Kubernetes manifests
+          run: |
+            kubeconform \
+              --strict \
+              --summary \
+              --output json \
+              k8s > validation-results/validation.json
+
+        - name: Upload validation results
+          if: always()
+          uses: actions/upload-artifact@v3
+          with:
+            name: k8s-validation-results
+            path: validation-results/validation.json
+            retention-days: 7
