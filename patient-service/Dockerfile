@@ -3,50 +3,54 @@ FROM gradle:8.5-jdk21 AS builder
 
 WORKDIR /app
 
-# Copy Gradle configuration files first for better layer caching
+# Copy Gradle configuration files
 COPY gradle/ ./gradle/
-COPY gradlew build.gradle.kts settings.gradle.kts ./
+COPY gradlew ./gradlew
+COPY build.gradle.kts settings.gradle.kts ./
 
-# Verify Gradle wrapper is executable
+# Verify Gradle wrapper and make it executable
 RUN chmod +x ./gradlew
 
-# Download dependencies and cache them
-RUN ./gradlew dependencies --no-daemon --parallel
+# Create .gradle directory and set permissions
+RUN mkdir -p .gradle && \
+    chmod -R 777 .gradle
+
+# Download dependencies first
+# Using --refresh-dependencies to force download and --stacktrace for better error logging
+RUN ./gradlew dependencies --no-daemon --refresh-dependencies --stacktrace || \
+    (echo "Retrying dependency download..." && \
+     ./gradlew dependencies --no-daemon --refresh-dependencies --stacktrace --info)
 
 # Copy source code after dependency resolution
-COPY src/ ./src/
+COPY . .
 
-# Build the application, skipping all checks
-RUN ./gradlew build -x test -x integrationTest -x jacocoTestReport -x jacocoTestCoverageVerification -x dependencyCheckAnalyze --no-daemon --parallel
+# Build the application, skipping tests and checks
+RUN ./gradlew bootJar --no-daemon --parallel --stacktrace
 
 # Production image
 FROM eclipse-temurin:21-jre-jammy
 
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user for security
+# Create non-root user
 RUN useradd -r -s /bin/false javauser
 
 WORKDIR /app
 
-# Copy the built jar directly
+# Copy the built jar
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Set proper ownership
+# Set ownership
 RUN chown -R javauser:javauser /app
 
-# Switch to non-root user
 USER javauser
 
-# Configure container
 EXPOSE 8080 8001 5005
 VOLUME /tmp
 
-# Health check for container monitoring
 HEALTHCHECK --interval=30s --timeout=3s \
   CMD curl -f http://localhost:8001/actuator/health || exit 1
 
-# Use jar directly instead of unpacking
 ENTRYPOINT ["java", \
             "-XX:+UseContainerSupport", \
             "-XX:MaxRAMPercentage=75.0", \
