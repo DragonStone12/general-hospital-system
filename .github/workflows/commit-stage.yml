@@ -216,6 +216,8 @@ jobs:
         if: steps.should-run.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
+          name: artifact
+          path: all-reports
           pattern: "*-reports-${{ matrix.service }}"
           merge-multiple: true
           retention-days: 7
