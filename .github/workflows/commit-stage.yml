@@ -74,6 +74,7 @@ jobs:
             ${{ matrix.service }}/build/reports/tests/test/
             ${{ matrix.service }}/build/reports/tests/integrationTest/
             ${{ matrix.service }}/build/reports/jacoco/test/html/
+            ${{ matrix.service }}/build/reports/checkstyle/
           retention-days: 1
 
       - name: Upload Build Artifacts
@@ -207,7 +208,7 @@ jobs:
 
       - name: Download All Reports
         if: steps.should-run.outputs.should_run == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/download-artifact@v4
         with:
           path: all-reports
 
@@ -215,8 +216,8 @@ jobs:
         if: steps.should-run.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: all-reports-${{ matrix.service }}
-          path: all-reports
+          pattern: "*-reports-${{ matrix.service }}"
+          merge-multiple: true
           retention-days: 7
 
   validate:
