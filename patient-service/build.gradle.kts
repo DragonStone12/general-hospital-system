@@ -10,7 +10,6 @@ plugins {
 group = "com.pam"
 version = "0.0.1-SNAPSHOT"
 
-
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
@@ -35,20 +34,17 @@ dependencies {
         implementation("org.apache.commons:commons-text:1.11.0")
     }
 
-    // Spring Boot dependencies
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.cloud:spring-cloud-starter-config")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.retry:spring-retry:2.0.10")
 
-    // Lombok configuration
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     testCompileOnly("org.projectlombok:lombok")
     testAnnotationProcessor("org.projectlombok:lombok")
 
-    // Development and testing dependencies
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -72,7 +68,6 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
-
 val integrationTest = tasks.register<Test>("integrationTest") {
     description = "Runs integration tests."
     group = "verification"
@@ -86,6 +81,7 @@ val integrationTest = tasks.register<Test>("integrationTest") {
 
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
+    outputs.cacheIf { true }
 
     classDirectories.setFrom(
         files(classDirectories.files.map {
@@ -127,25 +123,44 @@ tasks.jacocoTestCoverageVerification {
     }
 }
 
-val checkstyle = tasks.withType<Checkstyle>().configureEach {
+tasks.withType<Checkstyle>().configureEach {
+    inputs.files(tasks.compileJava)
+    inputs.files(tasks.compileTestJava)
+
+    outputs.cacheIf { true }
+    outputs.upToDateWhen { true }
+}
+
+tasks.checkstyleMain {
+    dependsOn(tasks.compileJava, tasks.compileTestJava)
+    shouldRunAfter(tasks.compileTestJava)
 
     source = fileTree(project.projectDir) {
-        include("**/*.java")
-        exclude("config/**")
+        include("src/main/java/**/*.java")
+        exclude("**/generated/**")
     }
+}
 
-    description = "Runs checkstyle to enforce code style and formatting standards."
+tasks.checkstyleTest {
+    dependsOn(tasks.compileTestJava)
 
-    reports {
-        xml.required = false
-        html.required = true
-        html.stylesheet = resources.text.fromFile("config/xsl/checkstyle-custom.xsl")
+    source = fileTree(project.projectDir) {
+        include("src/test/java/**/*.java")
+        exclude("**/generated/**")
     }
 }
 
 tasks.check {
     dependsOn(
-        integrationTest,
+        tasks.compileJava,
+        tasks.compileTestJava,
+        tasks.test,
+        tasks.checkstyleMain,
+        tasks.checkstyleTest,
+        tasks.jacocoTestReport,
         tasks.jacocoTestCoverageVerification,
+        tasks.spotbugsMain,
+        tasks.spotbugsTest,
+        integrationTest
     )
 }
