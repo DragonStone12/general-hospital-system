@@ -128,7 +128,11 @@ tasks.jacocoTestCoverageVerification {
 }
 
 val checkstyle = tasks.withType<Checkstyle>().configureEach {
-    dependsOn(tasks.jacocoTestCoverageVerification)
+
+    source = fileTree(project.projectDir) {
+        include("**/*.java")
+        exclude("config/**")
+    }
 
     description = "Runs checkstyle to enforce code style and formatting standards."
 
