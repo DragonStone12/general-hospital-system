@@ -226,8 +226,8 @@ jobs:
         if: steps.should-run.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: artifact
-          path: all-reports/${{ matrix.service }}
+          name: all-reports-${{ matrix.service }}
+          path: all-reports/*-reports-${{ matrix.service }}
           retention-days: 7
 
   validate:
