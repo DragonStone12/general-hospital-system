@@ -72,6 +72,9 @@ val integrationTest = tasks.register<Test>("integrationTest") {
     description = "Runs integration tests."
     group = "verification"
 
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+
     useJUnitPlatform {
         includeTags("integration")
     }
