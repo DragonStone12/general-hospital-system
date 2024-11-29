@@ -63,7 +63,14 @@ jobs:
         working-directory: ${{ matrix.service }}
         run: |
           chmod +x gradlew
-          ./gradlew check
+          ./gradlew checkstyleMain --stacktrace || exit 1
+          ./gradlew checkstyleTest --stacktrace || exit 1
+          ./gradlew test --stacktrace || exit 1
+          ./gradlew integrationTest --stacktrace || exit 1
+          ./gradlew jacocoTestReport --stacktrace || exit 1
+          ./gradlew jacocoTestCoverageVerification --stacktrace || exit 1
+          ./gradlew spotbugsMain --stacktrace || exit 1
+          ./gradlew spotbugsTest --stacktrace || exit 1
 
       - name: Upload Test Reports
         if: steps.should-run.outputs.should_run == 'true' && always()
@@ -74,6 +81,10 @@ jobs:
             ${{ matrix.service }}/build/reports/tests/test/
             ${{ matrix.service }}/build/reports/tests/integrationTest/
             ${{ matrix.service }}/build/reports/jacoco/test/html/
+            ${{ matrix.service }}/build/reports/checkstyle/main.html
+            ${{ matrix.service }}/build/reports/checkstyle/test.html
+            ${{ matrix.service }}/build/reports/spotbugs/main.html
+            ${{ matrix.service }}/build/reports/spotbugs/test.html
           retention-days: 1
 
       - name: Upload Build Artifacts
@@ -207,7 +218,7 @@ jobs:
 
       - name: Download All Reports
         if: steps.should-run.outputs.should_run == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/download-artifact@v4
         with:
           path: all-reports
 
@@ -216,7 +227,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: all-reports-${{ matrix.service }}
-          path: all-reports
+          path: all-reports/*-reports-${{ matrix.service }}
           retention-days: 7
 
   validate:
@@ -294,19 +305,7 @@ jobs:
         if: steps.should-run.outputs.should_run == 'true'
         id: version
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            # Generate calendar version YY.MM
-            CALVER=$(date +'%y.%m')
-            echo "tag=${CALVER}" >> $GITHUB_OUTPUT
-          else
-            # Extract issue number from branch name
-            BRANCH_NAME="${{ github.ref_name }}"
-            if [[ $BRANCH_NAME =~ [Ii]ssue-([0-9]+) ]] || [[ $BRANCH_NAME =~ GH-([0-9]+) ]]; then
-              echo "tag=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-            else
-              echo "tag=dev" >> $GITHUB_OUTPUT
-            fi
-          fi
+          echo "tag=dev" >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
         if: steps.should-run.outputs.should_run == 'true'

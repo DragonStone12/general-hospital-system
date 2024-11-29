@@ -1,0 +1,32 @@
+.git
+.vscode
+.gitignore
+Makefile
+README.md
+
+#Ignore the logs directory
+logs/
+
+#Ignoring git and cache folders
+.cache
+
+#Ignoring all the markdown and class files
+*.md
+**/*.class
+
+target/
+
+LICENSE
+Dockerfile*
+docker-compose*
+data/*
+test/*
+
+# dotenv
+.env
+
+
+# IntelliJ
+out/
+.idea/
+

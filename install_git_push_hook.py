@@ -166,6 +166,14 @@ def main():
                 f"SpotBugs found issues in {service_name}. Check the report at build/reports/spotbugs/main.xml"
             ),
             (
+                [gradlew_path, 'checkstyleMain', '--stacktrace'],
+                f"Checkstyle found issues in {service_name}. Check the report at build/reports/checkstyle/test.html"
+            ),
+            (
+                [gradlew_path, 'checkstyleTest', '--stacktrace'],
+                f"Checkstyle found issues in {service_name}. Check the report at build/reports/checkstyle/test.html"
+            ),
+            (
                 [gradlew_path, 'build', '--stacktrace'],
                 f"Build failed in {service_name}. Please fix build issues before pushing."
             )
