@@ -145,10 +145,10 @@ jobs:
           retention-days: 1
 
   security-scan:
-    needs: [build-and-test, spotbugs-analysis]
+    needs: [ build-and-test, spotbugs-analysis ]
     strategy:
       matrix:
-        service: [patient-service, config-service]
+        service: [ patient-service, config-service ]
     name: Security Scan ${{ matrix.service }}
     runs-on: ubuntu-22.04
     environment: development
@@ -180,6 +180,36 @@ jobs:
           severity-cutoff: high
           output-format: table,sarif
 
+      - name: Generate Production SBOM
+        if: steps.should-run.outputs.should_run == 'true'
+        uses: anchore/sbom-action@v0
+        id: sbom-production
+        with:
+          path: "${{ github.workspace }}/${{ matrix.service }}"
+          format: cyclonedx-json
+          output-file: "production-sbom.json"
+          registry-auth: true
+          package-type: "java-archive"
+          exclude: "test/**/*,**/test/*"
+
+      - name: Analyze SBOM
+        if: steps.should-run.outputs.should_run == 'true'
+        run: |
+          # Add custom analysis of the SBOM if needed
+          if [ -f "production-sbom.json" ]; then
+            echo "SBOM generated successfully"
+            # Add additional analysis steps here
+          else
+            echo "SBOM generation failed"
+            exit 1
+          fi
+
+      - name: Submit SBOM to GitHub Dependency Snapshot
+        if: steps.should-run.outputs.should_run == 'true'
+        uses: advanced-security/maven-dependency-submission-action@v3
+        with:
+          sbom-file: "production-sbom.json"
+
       - name: Upload Anchore scan SARIF report
         if: steps.should-run.outputs.should_run == 'true'
         uses: github/codeql-action/upload-sarif@v3
@@ -193,6 +223,7 @@ jobs:
           name: security-reports-${{ matrix.service }}
           path: |
             ${{ steps.scan.outputs.sarif }}
+            production-sbom.json
             ${{ matrix.service }}/build/reports/dependency-check-report.html
           retention-days: 1
 
