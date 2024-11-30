@@ -5,12 +5,10 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: true
 
 jobs:
-
   detect-changes:
     runs-on: ubuntu-22.04
     outputs:
-      patient-service: ${{ steps.filter.outputs.patient-service }}
-      config-service: ${{ steps.filter.outputs.config-service }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -21,39 +19,34 @@ jobs:
               - 'patient-service/**'
             config-service:
               - 'config-service/**'
-      - name: Debug Outputs
+
+      - id: set-matrix
+        name: Set matrix
         run: |
-          echo "Patient Service: ${{ steps.filter.outputs.patient-service }}"
-          echo "Config Service: ${{ steps.filter.outputs.config-service }}"
+          services=()
+          if [[ "${{ steps.filter.outputs.patient-service }}" == "true" ]]; then
+            services+=("patient-service")
+          fi
+          if [[ "${{ steps.filter.outputs.config-service }}" == "true" ]]; then
+            services+=("config-service")
+          fi
+          echo "matrix=$(jq -c -n --arg s "${services[*]}" '{include: ($s | split(" ") | map({service: .}))}' )" >> $GITHUB_OUTPUT
 
   build-and-test:
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.patient-service == 'true' || needs.detect-changes.outputs.config-service == 'true' }}
+    if: fromJson(needs.detect-changes.outputs.matrix).include[0]
     strategy:
-      matrix:
-        service: [patient-service, config-service]
+      matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
     name: Build and Test ${{ matrix.service }}
     runs-on: ubuntu-22.04
     environment: development
     permissions:
       contents: read
     steps:
-      - name: Check if service should run
-        id: should-run
-        run: |
-          if [[ "${{ matrix.service }}" == "patient-service" && "${{ needs.detect-changes.outputs.patient-service }}" == "true" ]] || \
-             [[ "${{ matrix.service }}" == "config-service" && "${{ needs.detect-changes.outputs.config-service }}" == "true" ]]; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
-          else
-            echo "should_run=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Checkout source code
-        if: steps.should-run.outputs.should_run == 'true'
         uses: actions/checkout@v4
 
       - name: Set up JDK
-        if: steps.should-run.outputs.should_run == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -61,7 +54,6 @@ jobs:
           cache: gradle
 
       - name: Build, unit tests and integration tests
-        if: steps.should-run.outputs.should_run == 'true'
         working-directory: ${{ matrix.service }}
         run: |
           chmod +x gradlew
@@ -75,7 +67,7 @@ jobs:
           ./gradlew spotbugsTest --stacktrace || exit 1
 
       - name: Upload Test Reports
-        if: steps.should-run.outputs.should_run == 'true' && always()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-reports-${{ matrix.service }}
@@ -90,7 +82,6 @@ jobs:
           retention-days: 1
 
       - name: Upload Build Artifacts
-        if: steps.should-run.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts-${{ matrix.service }}
@@ -99,10 +90,9 @@ jobs:
 
   security-scan:
     needs: [build-and-test, detect-changes]
-    if: ${{ needs.detect-changes.outputs.patient-service == 'true' || needs.detect-changes.outputs.config-service == 'true' }}
+    if: fromJson(needs.detect-changes.outputs.matrix).include[0]
     strategy:
-      matrix:
-        service: [patient-service, config-service]
+      matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
     name: Security Scan ${{ matrix.service }}
     runs-on: ubuntu-22.04
     environment: development
@@ -110,22 +100,10 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - name: Check if service should run
-        id: should-run
-        run: |
-          if [[ "${{ matrix.service }}" == "patient-service" && "${{ needs.detect-changes.outputs.patient-service }}" == "true" ]] || \
-             [[ "${{ matrix.service }}" == "config-service" && "${{ needs.detect-changes.outputs.config-service }}" == "true" ]]; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
-          else
-            echo "should_run=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Checkout source code
-        if: steps.should-run.outputs.should_run == 'true'
         uses: actions/checkout@v4
 
       - name: Code vulnerability scanning
-        if: steps.should-run.outputs.should_run == 'true'
         uses: anchore/scan-action@v3
         id: scan
         with:
@@ -135,13 +113,12 @@ jobs:
           output-format: sarif
 
       - name: Upload Anchore scan SARIF report
-        if: steps.should-run.outputs.should_run == 'true'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ steps.scan.outputs.sarif }}
 
       - name: Upload Security Reports
-        if: steps.should-run.outputs.should_run == 'true' && always()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-reports-${{ matrix.service }}
@@ -153,32 +130,19 @@ jobs:
   report-upload:
     name: Upload Combined Reports
     needs: [security-scan, detect-changes]
-    if: ${{ needs.detect-changes.outputs.patient-service == 'true' || needs.detect-changes.outputs.config-service == 'true' }}
+    if: fromJson(needs.detect-changes.outputs.matrix).include[0]
     strategy:
-      matrix:
-        service: [patient-service, config-service]
+      matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
     runs-on: ubuntu-22.04
     permissions:
       security-events: write
     steps:
-      - name: Check if service should run
-        id: should-run
-        run: |
-          if [[ "${{ matrix.service }}" == "patient-service" && "${{ needs.detect-changes.outputs.patient-service }}" == "true" ]] || \
-             [[ "${{ matrix.service }}" == "config-service" && "${{ needs.detect-changes.outputs.config-service }}" == "true" ]]; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
-          else
-            echo "should_run=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Download All Reports
-        if: steps.should-run.outputs.should_run == 'true'
         uses: actions/download-artifact@v4
         with:
           path: all-reports
 
       - name: Upload Combined Reports
-        if: steps.should-run.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: artifact
@@ -188,36 +152,21 @@ jobs:
   validate:
     name: Validate Kubernetes Manifests
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.patient-service == 'true' || needs.detect-changes.outputs.config-service == 'true' }}
+    if: fromJson(needs.detect-changes.outputs.matrix).include[0]
     strategy:
-      matrix:
-        service: [ patient-service, config-service ]
+      matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
     runs-on: ubuntu-22.04
     steps:
-      - name: Check if service should run
-        id: should-run
-        run: |
-          if [[ "${{ matrix.service }}" == "patient-service" && "${{ needs.detect-changes.outputs.patient-service }}" == "true" ]] || \
-             [[ "${{ matrix.service }}" == "config-service" && "${{ needs.detect-changes.outputs.config-service }}" == "true" ]]; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
-          else
-            echo "should_run=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Checkout source code
-        if: steps.should-run.outputs.should_run == 'true'
         uses: actions/checkout@v4
 
       - name: Login to GitHub Container Registry
-        if: steps.should-run.outputs.should_run == 'true'
         run: echo "${{ github.token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Create results directory
-        if: steps.should-run.outputs.should_run == 'true'
         run: mkdir -p validation-results
 
       - name: Validate Kubernetes manifests
-        if: steps.should-run.outputs.should_run == 'true'
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/${{ matrix.service }}/k8s:/k8s \
@@ -226,7 +175,7 @@ jobs:
             -summary -output json /k8s > validation-results/validation.json
 
       - name: Upload validation results
-        if: steps.should-run.outputs.should_run == 'true' && always()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: k8s-validation-results-${{ matrix.service }}
@@ -234,38 +183,24 @@ jobs:
           retention-days: 7
 
   build-and-push:
-    needs: [ validate, detect-changes ]
-    if: ${{ needs.detect-changes.outputs.patient-service == 'true' || needs.detect-changes.outputs.config-service == 'true' }}
+    needs: [validate, detect-changes]
+    if: fromJson(needs.detect-changes.outputs.matrix).include[0]
     strategy:
-      matrix:
-        service: [ patient-service, config-service ]
+      matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
-      - name: Check if service should run
-        id: should-run
-        run: |
-          if [[ "${{ matrix.service }}" == "patient-service" && "${{ needs.detect-changes.outputs.patient-service }}" == "true" ]] || \
-             [[ "${{ matrix.service }}" == "config-service" && "${{ needs.detect-changes.outputs.config-service }}" == "true" ]]; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
-          else
-            echo "should_run=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Checkout repository
-        if: steps.should-run.outputs.should_run == 'true'
         uses: actions/checkout@v4
 
       - name: Generate version tag
-        if: steps.should-run.outputs.should_run == 'true'
         id: version
         run: |
           echo "tag=dev" >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
-        if: steps.should-run.outputs.should_run == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -273,7 +208,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
-        if: steps.should-run.outputs.should_run == 'true'
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -282,7 +216,6 @@ jobs:
             type=raw,value=${{ steps.version.outputs.tag }}
 
       - name: Build and push
-        if: steps.should-run.outputs.should_run == 'true'
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.service }}
