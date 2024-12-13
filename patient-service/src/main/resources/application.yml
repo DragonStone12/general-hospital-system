@@ -9,14 +9,6 @@ spring:
         namespace: default
       reload:
         enabled: true
-    request-connect-timeout: 2500
-    request-read-timeout: 2500
-    fail-fast: false
-    retry:
-      max-attempts: 8
-      initial-interval: 1500
-      max-interval: 3000
-      multiplier: 1.5
   devtools:
     livereload:
       port: 35730
