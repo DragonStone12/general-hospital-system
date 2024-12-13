@@ -4,6 +4,19 @@ metadata:
   name: patient-service
 data:
   application.yml: |
+    spring:
+      lifecycle:
+        timeout-per-shutdown-phase: 15s
+      cloud:
+        request-connect-timeout: 2500
+        request-read-timeout: 2500
+        fail-fast: false
+        retry:
+          max-attempts: 8
+          initial-interval: 1500
+          max-interval: 3000
+          multiplier: 1.5
+
     server:
       port: 9001
       shutdown: graceful
