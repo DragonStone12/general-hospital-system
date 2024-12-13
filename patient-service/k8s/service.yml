@@ -11,8 +11,8 @@ spec:
   ports:
     - name: app
       protocol: TCP
-      port: 8080
-      targetPort: 8080
+      port: 9001
+      targetPort: 9001
     - name: management
       protocol: TCP
       port: 8001

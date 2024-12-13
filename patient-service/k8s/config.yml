@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: patient-service
+data:
+  application.yml: |
+    server:
+      port: 9001
+      shutdown: graceful
+      tomcat:
+        connection-timeout: 2s
+        keep-alive-timeout: 15s
+        threads:
+          max: 50
+          min-spare: 5
+
+    management:
+      server:
+        port: 8001
+      endpoints:
+        web:
+          base-path: /actuator
+          exposure:
+            include: ["health", "metrics", "prometheus", "refresh", "info", "env", "mappings", "beans"]
+      endpoint:
+        health:
+          show-details: when_authorized
+        shutdown:
+          enabled: false
+
+    logging:
+      pattern:
+        console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
+      level:
+        root: INFO
+        org.springframework.security: INFO
+      file:
+        name: logs/patient-service.log
+        max-size: 10MB
+        max-history: 7
+        total-size-cap: 100MB
+      group:
+        patient:
+          - "com.pam.patientservice.controller"
