@@ -18,7 +18,7 @@ data:
           multiplier: 1.5
 
     server:
-      port: 9001
+      port: 9010
       shutdown: graceful
       tomcat:
         connection-timeout: 2s
@@ -29,7 +29,7 @@ data:
 
     management:
       server:
-        port: 8001
+        port: 8010
       endpoints:
         web:
           base-path: /actuator

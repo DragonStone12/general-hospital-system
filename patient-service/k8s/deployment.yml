@@ -24,8 +24,8 @@ spec:
               exec:
                 command: [ "sh", "-c", "sleep 5" ]
           ports:
-            - containerPort: 9001
-            - containerPort: 8001
+            - containerPort: 9010
+            - containerPort: 8010
             - containerPort: 5005
           env:
             - name: SPRING_CONFIG_LOCATION
