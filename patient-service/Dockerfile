@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.4
 FROM gradle:8.5-jdk21 AS builder
 
 WORKDIR /app
@@ -28,7 +27,7 @@ COPY . .
 RUN ./gradlew bootJar --no-daemon --parallel --stacktrace
 
 # Production image
-FROM eclipse-temurin:21-jre-jammy
+FROM openjdk:21-slim
 
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
@@ -45,7 +44,7 @@ RUN chown -R javauser:javauser /app
 
 USER javauser
 
-EXPOSE 8080 8001 5005
+EXPOSE 9001 8001 5005
 VOLUME /tmp
 
 HEALTHCHECK --interval=30s --timeout=3s \

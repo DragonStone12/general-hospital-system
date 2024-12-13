@@ -1,18 +1,22 @@
 spring:
   application:
     name: patient-service
-  config:
-    import: "optional:configserver:http://localhost:8888"  # Added full URL here
   cloud:
-    config:
-      request-connect-timeout: 2500
-      request-read-timeout: 2500
-      fail-fast: false
-      retry:
-        max-attempts: 8
-        initial-interval: 1500
-        max-interval: 3000
-        multiplier: 1.5
+    kubernetes:
+      config:
+        enabled: false
+        name: patient-service
+        namespace: default
+      reload:
+        enabled: true
+    request-connect-timeout: 2500
+    request-read-timeout: 2500
+    fail-fast: false
+    retry:
+      max-attempts: 8
+      initial-interval: 1500
+      max-interval: 3000
+      multiplier: 1.5
   devtools:
     livereload:
       port: 35730

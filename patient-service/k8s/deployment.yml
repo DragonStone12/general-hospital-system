@@ -14,6 +14,7 @@ spec:
       labels:
         app: patient-service
     spec:
+      serviceAccountName: patient-service
       containers:
         - name: patient-service
           image: patient-service
@@ -23,11 +24,18 @@ spec:
               exec:
                 command: [ "sh", "-c", "sleep 5" ]
           ports:
-            - containerPort: 8080
+            - containerPort: 9001
             - containerPort: 8001
             - containerPort: 5005
           env:
-            - name: SPRING_CLOUD_CONFIG_URI
-              value: http://config-service
+            - name: SPRING_CONFIG_LOCATION
+              value: file:/workspace/config/application.yml
             - name: JAVA_TOOL_OPTIONS
               value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /workspace/config
+      volumes:
+        - name: config-volume
+          configMap:
+            name: patient-service

@@ -36,9 +36,11 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.cloud:spring-cloud-starter-config")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.retry:spring-retry:2.0.10")
+    implementation("org.springframework.retry:spring-retry")
+    implementation("org.springframework.cloud:spring-cloud-starter-kubernetes-client")
+    implementation("org.springframework.cloud:spring-cloud-starter-kubernetes-client-config")
+
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
