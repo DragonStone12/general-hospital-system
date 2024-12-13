@@ -11,12 +11,12 @@ spec:
   ports:
     - name: app
       protocol: TCP
-      port: 9001
-      targetPort: 9001
+      port: 9010
+      targetPort: 9010
     - name: management
       protocol: TCP
-      port: 8001
-      targetPort: 8001
+      port: 8010
+      targetPort: 8010
     - name: debug
       protocol: TCP
       port: 5005

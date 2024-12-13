@@ -44,11 +44,11 @@ RUN chown -R javauser:javauser /app
 
 USER javauser
 
-EXPOSE 9001 8001 5005
+EXPOSE 9010 8010 5005
 VOLUME /tmp
 
 HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f http://localhost:8001/actuator/health || exit 1
+  CMD curl -f http://localhost:8010/actuator/health || exit 1
 
 ENTRYPOINT ["java", \
             "-XX:+UseContainerSupport", \
