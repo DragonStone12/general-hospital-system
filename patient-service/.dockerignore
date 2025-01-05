@@ -13,7 +13,7 @@ logs/
 #Ignoring all the markdown and class files
 *.md
 **/*.class
-
+*.dev.yml
 target/
 
 LICENSE
@@ -29,4 +29,6 @@ test/*
 # IntelliJ
 out/
 .idea/
+
+
 

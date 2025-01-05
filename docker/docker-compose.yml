@@ -1,8 +1,14 @@
 services:
   patient-service:
     depends_on:
-      - fluent-bit
-      - tempo
+      postgres:
+        condition: service_healthy
+      fluent-bit:
+        condition: service_started
+        required: true
+      tempo:
+        condition: service_started
+        required: true
     build:
       context: ../patient-service
       dockerfile: Dockerfile
@@ -11,14 +17,47 @@ services:
       - "9010:9010"
       - "8010:8010"
       - "5005:5005"
+    env_file:
+      - .env
     environment:
-        JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      PATIENT_SERVICE_DB: ${PATIENT_SERVICE_DB}
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://${PATIENT_SERVICE_HOSTNAME}:5432/${PATIENT_SERVICE_DB}"
+      SPRING_DATASOURCE_USERNAME: ${PATIENT_SERVICE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${PATIENT_SERVICE_PASSWORD}
+      SHOULD_SHOW_SQL: ${SHOULD_SHOW_SQL}
+      SPRING_PROFILES_ACTIVE: dev
     networks:
       - general-hospital-network
     logging:
       driver: fluentd
       options:
         fluentd-address: 127.0.0.1:24224
+
+  postgres:
+    container_name: postgres
+    image: postgres
+    mem_limit: 512m
+    restart: unless-stopped
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - db-conf:/etc/postgresql
+    networks:
+      - general-hospital-network
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${PATIENT_SERVICE_USERNAME}
+      POSTGRES_PASSWORD: ${PATIENT_SERVICE_PASSWORD}
+      POSTGRES_DB: ${PATIENT_SERVICE_DB}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d ${PATIENT_SERVICE_DB} -U ${PATIENT_SERVICE_USERNAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
   grafana:
     image: grafana/grafana-oss:10.4.3
@@ -32,8 +71,8 @@ services:
     env_file:
       - .env
     environment:
-      - GF_SECURITY_ADMIN_USER=${GF_USER}
-      - GF_SECURITY_ADMIN_PASSWORD=${GF_PASSWORD}
+      GF_SECURITY_ADMIN_USER: ${GF_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_PASSWORD}
     volumes:
       - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
       - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
@@ -53,7 +92,7 @@ services:
     ports:
       - "24224:24224"
     environment:
-      - LOKI_URL=http://loki:3100/loki/api/v1/push
+      LOKI_URL: http://loki:3100/loki/api/v1/push
     volumes:
       - ./monitoring/fluent_bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
 
@@ -74,6 +113,12 @@ services:
       - "4317:4317"
     volumes:
       - ./monitoring/tempo/tempo.yml:/etc/tempo-config.yml
+
+volumes:
+  db-data:
+    driver: local
+  db-conf:
+    driver: local
 
 networks:
   general-hospital-network:
