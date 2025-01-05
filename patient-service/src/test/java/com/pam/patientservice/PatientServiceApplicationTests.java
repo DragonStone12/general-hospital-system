@@ -2,7 +2,10 @@ package com.pam.patientservice;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.ConfigurableBootstrapContext;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -12,6 +15,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Duration;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = {
     "PATIENT_SERVICE_HOSTNAME=localhost",
@@ -48,6 +53,13 @@ class PatientServiceApplicationTests {
     @Test
     @DisplayName("Verify Spring context loads successfully")
     void contextLoads() {
-        // Context load test - will fail if application context cannot start
+        ConfigurableApplicationContext context = SpringApplication.run(
+            PatientServiceApplication.class,
+            new String[]{"--spring.profiles.active=dev"}
+        );
+
+        assertThat(context).isNotNull();
+        assertThat(context.isActive()).isTrue();
+        assertThat(context.getEnvironment().getActiveProfiles()).isEqualTo("dev");
     }
 }
