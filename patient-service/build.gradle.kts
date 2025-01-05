@@ -45,6 +45,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
+    implementation("io.micrometer:micrometer-registry-prometheus")
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
