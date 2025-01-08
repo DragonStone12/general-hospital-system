@@ -7,7 +7,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
-
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringJUnitConfig
 class PatientServiceApplicationTests {
@@ -26,6 +26,15 @@ class PatientServiceApplicationTests {
                 )
             );
         }
+    }
+
+    @Test
+    void constructorCreatesInstance() {
+        // when
+        PatientServiceApplication application = new PatientServiceApplication();
+
+        // then
+        assertThat(application).isNotNull();
     }
 }
 
