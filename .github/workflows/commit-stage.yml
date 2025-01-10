@@ -6,7 +6,7 @@ env:
 
 jobs:
   detect-changes:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -38,7 +38,7 @@ jobs:
     strategy:
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
     name: Build and Test ${{ matrix.service }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     environment: development
     permissions:
       contents: read
@@ -94,7 +94,7 @@ jobs:
     strategy:
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
     name: Security Scan ${{ matrix.service }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     environment: development
     permissions:
       contents: read
@@ -133,7 +133,7 @@ jobs:
     if: fromJson(needs.detect-changes.outputs.matrix).include[0]
     strategy:
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       security-events: write
     steps:
@@ -155,7 +155,7 @@ jobs:
     if: fromJson(needs.detect-changes.outputs.matrix).include[0]
     strategy:
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
