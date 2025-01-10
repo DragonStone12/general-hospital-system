@@ -1,7 +1,7 @@
 services:
   patient-service:
     depends_on:
-      postgres:
+      patients-postgres:
         condition: service_healthy
       fluent-bit:
         condition: service_started
@@ -34,9 +34,9 @@ services:
       options:
         fluentd-address: 127.0.0.1:24224
 
-  postgres:
-    container_name: postgres
-    image: postgres
+  patients-postgres:
+    container_name: patients-postgres
+    image: postgres:16.1
     mem_limit: 512m
     restart: unless-stopped
     volumes:

@@ -20,19 +20,19 @@ spring:
     username: ${PATIENT_SERVICE_USERNAME}
     password: ${PATIENT_SERVICE_PASSWORD}
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
+      maximum-pool-size: 5
+      minimum-idle: 2
       connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
+      idle-timeout: 300000
+      max-lifetime: 600000
   jpa:
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     hibernate:
       ddl-auto: validate
       show-sql: ${SHOULD_SHOW_SQL:false}
+    open-in-view: false
   flyway:
     user: ${PATIENT_SERVICE_USERNAME}
     password: ${PATIENT_SERVICE_PASSWORD}
@@ -94,6 +94,18 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.springframework.jdbc: DEBUG
     org.springframework.transaction: DEBUG
+    org.springframework.cloud: DEBUG                     # Spring Cloud components
+    org.springframework.cloud.kubernetes: DEBUG          # Kubernetes integration
+    org.springframework.web.client.RestTemplate: DEBUG   # Inter-service REST calls
+    org.springframework.web.reactive: DEBUG              # WebClient calls
+    org.springframework.boot.actuate: DEBUG             # Actuator endpoints
+    org.springframework.cloud.loadbalancer: DEBUG       # Load balancing
+    org.springframework.retry: DEBUG                     # Retry mechanisms
+    org.springframework.cache: DEBUG                     # Caching operations
+    io.micrometer: DEBUG                                # Metrics collection
+    org.springframework.cloud.circuit.breaker: DEBUG
+    com.pam.patientservice: DEBUG
+    org.springframework.boot.availability: DEBUG
   file:
     name: logs/patient-service.log
     max-size: 10MB

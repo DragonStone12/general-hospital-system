@@ -4,7 +4,7 @@ spring:
   cloud:
     kubernetes:
       config:
-        enabled: false
+        enabled: true
         name: patient-service
         namespace: default
       reload:
