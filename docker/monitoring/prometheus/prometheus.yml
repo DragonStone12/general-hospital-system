@@ -8,3 +8,10 @@ scrape_configs:
     static_configs:
       - targets: [ 'patient-service:9010' ]
 
+  - job_name: 'appointment-service'
+    scrape_interval: 2s
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'patient-service:9020' ]
+
+
