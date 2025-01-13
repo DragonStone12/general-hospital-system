@@ -17,8 +17,8 @@ jobs:
           filters: |
             patient-service:
               - 'patient-service/**'
-            config-service:
-              - 'config-service/**'
+            appointment-service:
+              - 'appointment-service/**'
 
       - id: set-matrix
         name: Set matrix
@@ -27,8 +27,8 @@ jobs:
           if [[ "${{ steps.filter.outputs.patient-service }}" == "true" ]]; then
             services+=("patient-service")
           fi
-          if [[ "${{ steps.filter.outputs.config-service }}" == "true" ]]; then
-            services+=("config-service")
+          if [[ "${{ steps.filter.outputs.appointment-service }}" == "true" ]]; then
+            services+=("appointment-service")
           fi
           echo "matrix=$(jq -c -n --arg s "${services[*]}" '{include: ($s | split(" ") | map({service: .}))}' )" >> $GITHUB_OUTPUT
 
