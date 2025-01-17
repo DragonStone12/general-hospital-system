@@ -1,7 +1,7 @@
 plugins {
 	java
-	id("org.springframework.boot") version "3.3.5"
-    id("io.spring.dependency-management") version "1.1.6"
+	id("org.springframework.boot") version "3.3.7"
+	id("io.spring.dependency-management") version "1.1.7"
 	id("jacoco")
 	id("com.github.spotbugs") version "6.0.18"
 	id("checkstyle")
@@ -12,7 +12,7 @@ version = "0.0.1-SNAPSHOT"
 
 java {
 	toolchain {
-		languageVersion.set(JavaLanguageVersion.of(21))
+		languageVersion = JavaLanguageVersion.of(21)
 	}
 }
 
@@ -21,12 +21,18 @@ jacoco {
 	reportsDirectory.set(layout.buildDirectory.dir("reports/jacoco"))
 }
 
+
+configurations {
+	compileOnly {
+		extendsFrom(configurations.annotationProcessor.get())
+	}
+}
+
 repositories {
 	mavenCentral()
 }
 
 val springCloudVersion = "2023.0.3"
-
 
 dependencies {
 	constraints {
@@ -35,19 +41,15 @@ dependencies {
 		implementation("org.apache.commons:commons-text:1.11.0")
 	}
 
-	implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
-	implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
-	implementation("org.springframework.boot:spring-boot-starter-web")
-	implementation("org.springframework.boot:spring-boot-starter-validation")
+	implementation("org.springframework.cloud:spring-cloud-stream")
+	implementation("org.springframework.cloud:spring-cloud-stream-binder-kafka")
+	implementation("org.springframework.kafka:spring-kafka")
 	implementation("org.springframework.retry:spring-retry")
 	implementation("org.springframework.cloud:spring-cloud-starter-kubernetes-client")
 	implementation("org.springframework.cloud:spring-cloud-starter-kubernetes-client-config")
-	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-	implementation("org.flywaydb:flyway-core")
-	implementation("org.flywaydb:flyway-sqlserver")
-	implementation("org.springframework:spring-jdbc")
-    implementation("org.flywaydb:flyway-mysql:11.1.1")
+	implementation("io.micrometer:micrometer-registry-prometheus")
 
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
@@ -57,18 +59,11 @@ dependencies {
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.springframework.boot:spring-boot-testcontainers")
-	testImplementation("io.projectreactor:reactor-test")
-	testImplementation("org.testcontainers:junit-jupiter")
-	testImplementation("org.testcontainers:mysql")
-	testImplementation("org.testcontainers:r2dbc")
-
+	testImplementation("org.springframework.cloud:spring-cloud-stream-test-binder")
+	testImplementation("org.springframework.kafka:spring-kafka-test")
+    testImplementation("io.projectreactor:reactor-test")
+	testImplementation("org.testcontainers:kafka")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-
-	runtimeOnly("com.microsoft.sqlserver:mssql-jdbc")
-	runtimeOnly("io.r2dbc:r2dbc-mssql:1.0.0.RELEASE")
-	runtimeOnly("com.mysql:mysql-connector-j")
-	runtimeOnly("io.asyncer:r2dbc-mysql")
 }
 
 dependencyManagement {
@@ -76,7 +71,6 @@ dependencyManagement {
 		mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
 	}
 }
-
 
 tasks.withType<Test> {
 	useJUnitPlatform()
@@ -189,3 +183,4 @@ tasks.check {
 			integrationTest
 	)
 }
+
