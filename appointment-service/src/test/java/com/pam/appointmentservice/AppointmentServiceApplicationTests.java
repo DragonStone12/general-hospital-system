@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 
+
 @SpringJUnitConfig
 class AppointmentServiceApplicationTests {
 
@@ -20,10 +21,10 @@ class AppointmentServiceApplicationTests {
 
             // then
             mockedSpringApplication.verify(
-                    () -> SpringApplication.run(
-                            eq(AppointmentServiceApplication.class),
-                            any(String[].class)
-                    )
+                () -> SpringApplication.run(
+                    eq(AppointmentServiceApplication.class),
+                    any(String[].class)
+                )
             );
         }
     }

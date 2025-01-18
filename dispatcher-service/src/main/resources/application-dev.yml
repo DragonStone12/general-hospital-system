@@ -7,11 +7,11 @@ spring:
     stream:
       kafka:
         binder:
-          brokers: ${KAFKA_BROKERS}  # Changed to environment variable
+          brokers: ${KAFKA_BROKERS}
           required-acks: all
-          replication-factor: 3
+          replication-factor: 1
       bindings:
-        appointmentCreated-in-0:  # Added consumer binding
+        appointmentCreated-in-0:
           destination: appointment.created
           contentType: application/json
           group: ${spring.application.name}
@@ -21,8 +21,8 @@ spring:
             backOffMaxInterval: 10000
             backOffMultiplier: 2.0
       function:
-        definition: handleAppointment  # Added function definition
-    kubernetes:  # Added Kubernetes config
+        definition: handleAppointment
+    kubernetes:
       enabled: true
       reload:
         enabled: true

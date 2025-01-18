@@ -24,7 +24,7 @@ RUN ./gradlew dependencies --no-daemon --refresh-dependencies --stacktrace || \
 COPY . .
 
 # Build the application, skipping tests and checks
-RUN ./gradlew bootJar --no-daemon --parallel --stacktrace
+RUN ./gradlew clean bootJar --no-daemon --parallel --stacktrace
 
 # Production image
 FROM openjdk:21-slim
