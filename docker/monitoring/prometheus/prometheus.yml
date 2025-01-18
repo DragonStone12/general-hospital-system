@@ -12,6 +12,12 @@ scrape_configs:
     scrape_interval: 2s
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: [ 'patient-service:9020' ]
+      - targets: [ 'appointment-service:9020' ]
+
+  - job_name: 'dispatcher-service'
+    scrape_interval: 2s
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'dispatcher-service:9020' ]    
 
 

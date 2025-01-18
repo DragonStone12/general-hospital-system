@@ -1,4 +1,4 @@
-package com.pam.appointmentservice;
+package com.pam.dispatcherservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
@@ -11,18 +11,18 @@ import static org.mockito.Mockito.mockStatic;
 
 
 @SpringJUnitConfig
-class AppointmentServiceApplicationTests {
+class DispatcherServiceApplicationTests {
 
     @Test
     void contextLoads() {
         try (var mockedSpringApplication = mockStatic(SpringApplication.class)) {
             // when
-            AppointmentServiceApplication.main(new String[]{});
+            DispatcherServiceApplication.main(new String[]{});
 
             // then
             mockedSpringApplication.verify(
                 () -> SpringApplication.run(
-                    eq(AppointmentServiceApplication.class),
+                    eq(DispatcherServiceApplication.class),
                     any(String[].class)
                 )
             );
@@ -32,9 +32,10 @@ class AppointmentServiceApplicationTests {
     @Test
     void constructorCreatesInstance() {
         // when
-        AppointmentServiceApplication application = new AppointmentServiceApplication();
+        DispatcherServiceApplication application = new DispatcherServiceApplication();
 
         // then
         assertThat(application).isNotNull();
     }
 }
+

@@ -1,10 +1,3 @@
-server:
-  port: 9020
-  shutdown: graceful
-  netty:
-    connection-timeout: 2s
-    idle-timeout: 15s
-
 spring:
   application:
     name: appointment-service
@@ -15,16 +8,28 @@ spring:
     password: ${APPOINTMENT_SERVICE_PASSWORD}
     url: r2dbc:mysql://${APPOINTMENT_SERVICE_HOSTNAME}:3306/${APPOINTMENT_SERVICE_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     pool:
-      max-create-connection-time: 2s
-      initial-size: 5
-      max-size: 10
+      max-size: 20        # Increased for dev environment
+      initial-size: 10    # Half of max-size
+      max-create-connection-time: 5s
+  datasource:
+    hikari:
+      pool-name: appointment-service-pool
+      maximum-pool-size: 5
+      minimum-idle: 2
+      idle-timeout: 300000      # 5 minutes
+      max-lifetime: 600000      # 10 minutes
+      connection-timeout: 30000  # 30 seconds
+      validation-timeout: 5000   # 5 seconds
+      connection-test-query: SELECT 1
+      register-mbeans: true     # Helpful for monitoring in dev
   flyway:
     user: ${spring.r2dbc.username}
     password: ${spring.r2dbc.password}
     url: jdbc:mysql://${APPOINTMENT_SERVICE_HOSTNAME}:3306/${APPOINTMENT_SERVICE_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     locations: classpath:db/migration
     encoding: UTF-8
-    baseline-on-migrate: false
+    baseline-on-migrate: true
+
   cloud:
     loadbalancer:
       request:
@@ -37,6 +42,16 @@ spring:
         initial-interval: 1500
         max-interval: 3000
         multiplier: 1.5
+
+server:
+  port: 9020
+  shutdown: graceful
+  tomcat:
+    connection-timeout: 2s
+    keep-alive-timeout: 15s
+    threads:
+      max: 50
+      min-spare: 5
 
 management:
   server:
@@ -67,7 +82,7 @@ management:
       enabled: true
   metrics:
     tags:
-      application: ${spring.application.name}    
+      application: ${spring.application.name}
 
 logging:
   pattern:

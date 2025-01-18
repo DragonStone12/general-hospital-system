@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         app: patient-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8010"
     spec:
       serviceAccountName: patient-service
       containers:
@@ -30,8 +34,22 @@ spec:
           env:
             - name: SPRING_CONFIG_LOCATION
               value: file:/workspace/config/application.yml
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://patients-postgres/patients
             - name: JAVA_TOOL_OPTIONS
               value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8010
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8010
+            initialDelaySeconds: 5
+            periodSeconds: 15
           volumeMounts:
             - name: config-volume
               mountPath: /workspace/config

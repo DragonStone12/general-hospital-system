@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: appointment-service
+  cloud:
+    kubernetes:
+      config:
+        enabled: true
+        name: appointment-service
+        namespace: default
+      reload:
+        enabled: true
+  devtools:
+    livereload:
+      port: 35730
