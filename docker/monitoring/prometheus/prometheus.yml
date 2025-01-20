@@ -6,18 +6,22 @@ scrape_configs:
     scrape_interval: 2s
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: [ 'patient-service:9010' ]
+      - targets: [ 'patient-service:8010' ]
 
   - job_name: 'appointment-service'
     scrape_interval: 2s
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: [ 'appointment-service:9020' ]
+      - targets: [ 'appointment-service:8020' ]
 
   - job_name: 'dispatcher-service'
     scrape_interval: 2s
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: [ 'dispatcher-service:9020' ]    
+      - targets: [ 'dispatcher-service:8030' ]
 
-
+  - job_name: 'provider-service'
+    scrape_interval: 2s
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'provider-service:8040' ]

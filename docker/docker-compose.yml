@@ -100,7 +100,41 @@ services:
     logging:
       driver: fluentd
       options:
-        fluentd-address: 127.0.0.1:24224     
+        fluentd-address: 127.0.0.1:24224
+
+  provider-service:
+    container_name: provider-service
+    depends_on:
+      providers-mongodb:
+        condition: service_healthy
+      fluent-bit:
+        condition: service_started
+        required: true
+      tempo:
+        condition: service_started
+        required: true
+    build:
+      context: ../provider-service
+      dockerfile: Dockerfile
+    ports:
+      - "9040:9040"
+      - "8040:8040"
+      - "5008:5008"
+    env_file:
+      - .env
+    environment:
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008"
+      SPRING_PROFILES_ACTIVE: dev
+      PROVIDER_SERVICE_DB: ${PROVIDER_SERVICE_DB}
+      SPRING_DATA_MONGODB_URI: "mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${PROVIDER_SERVICE_HOSTNAME}:27017/${PROVIDER_SERVICE_DB}?authSource=admin"
+      SPRING_DATA_MONGODB_AUTO_INDEX_CREATION: "true"
+    mem_limit: 512m
+    networks:
+      - general-hospital-network
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: 127.0.0.1:24224
   
   patients-postgres:
     container_name: patients-postgres
@@ -150,6 +184,33 @@ services:
       timeout: 5s
       retries: 5
       start_period: 60s
+
+  providers-mongodb:
+    container_name: providers-mongo
+    image: mongo:7.0.5
+    ports:
+      - "27017:27017"
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+    volumes:
+      - provider-mongo-data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - general-hospital-network
+    mem_limit: 512m
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: 127.0.0.1:24224
 
   grafana:
     image: grafana/grafana-oss:10.4.3
@@ -255,6 +316,8 @@ volumes:
   appointments-db:
     driver: local
   appointments-db-conf:
+    driver: local
+  provider-mongo-data:
     driver: local
 
 networks:
