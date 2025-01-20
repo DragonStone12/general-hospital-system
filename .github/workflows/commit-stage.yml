@@ -37,7 +37,7 @@ jobs:
           if [[ "${{ steps.filter.outputs.dispatcher-service }}" == "true" ]]; then
             services+=("dispatcher-service")
           fi
-          if [[ "${{ steps.filter.outputs.dispatcher-service }}" == "true" ]]; then
+          if [[ "${{ steps.filter.outputs.provider-service }}" == "true" ]]; then
             services+=("provider-service")
           fi
           echo "matrix=$(jq -c -n --arg s "${services[*]}" '{include: ($s | split(" ") | map({service: .}))}' )" >> $GITHUB_OUTPUT
