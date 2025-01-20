@@ -1,0 +1,160 @@
+variables:
+  WORKING_DIR: $CI_PROJECT_DIR
+
+stages:
+  - detect
+  - build
+  - test
+  - security
+  - validate
+  - deploy
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
+include:
+  - local: .gitlab/ci/commit-stage.yml
+
+detect:
+  stage: detect
+  script: |
+    cd $WORKING_DIR
+    changes=()
+    for service in patient-service config-service; do
+      if git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA | grep -q "^$service/"; then
+        changes+=($service)
+      fi
+    done
+    echo "CHANGED_SERVICES=${changes[*]}" > build.env
+    cat build.env
+    ls -al $WORKING_DIR
+  artifacts:
+    reports:
+      dotenv: build.env
+    paths:
+      - build.env
+
+build-patient:
+  stage: test
+  image: eclipse-temurin:21
+  script:
+    - cd $WORKING_DIR/patient-service
+    - chmod +x gradlew
+    - ./gradlew checkstyleMain checkstyleTest test integrationTest jacocoTestReport jacocoTestCoverageVerification spotbugsMain spotbugsTest
+  artifacts:
+    paths:
+      - patient-service/build/reports/
+      - patient-service/build/libs/
+    expire_in: 1 day
+  rules:
+    - if: '$CHANGED_SERVICES && $CHANGED_SERVICES =~ "patient-service"'
+  needs:
+    - job: detect
+
+build-config:
+  stage: test
+  image: eclipse-temurin:21
+  script:
+    - cd $WORKING_DIR/config-service
+    - chmod +x gradlew
+    - ./gradlew checkstyleMain checkstyleTest test integrationTest jacocoTestReport jacocoTestCoverageVerification spotbugsMain spotbugsTest
+  artifacts:
+    paths:
+      - config-service/build/reports/
+      - config-service/build/libs/
+    expire_in: 1 day
+  rules:
+    - if: '$CHANGED_SERVICES && $CHANGED_SERVICES =~ "config-service"'
+  needs:
+    - job: detect
+
+security-patient:
+  stage: security
+  image: anchore/grype
+  script:
+    - grype dir:$WORKING_DIR/patient-service --output sarif > patient-service-scan.sarif
+  artifacts:
+    paths:
+      - patient-service-scan.sarif
+      - patient-service/build/reports/dependency-check-report.html
+    expire_in: 1 day
+  rules:
+    - if: '$CHANGED_SERVICES && $CHANGED_SERVICES =~ "patient-service"'
+  needs:
+    - job: detect
+    - job: build-patient
+
+security-config:
+  stage: security
+  image: anchore/grype
+  script:
+    - grype dir:$WORKING_DIR/config-service --output sarif > config-service-scan.sarif
+  artifacts:
+    paths:
+      - config-service-scan.sarif
+      - config-service/build/reports/dependency-check-report.html
+    expire_in: 1 day
+  rules:
+    - if: '$CHANGED_SERVICES && $CHANGED_SERVICES =~ "config-service"'
+  needs:
+    - job: detect
+    - job: build-config
+
+validate-patient:
+  stage: validate
+  image: ghcr.io/yannh/kubeconform
+  script:
+    - kubeconform -summary -output json $WORKING_DIR/patient-service/k8s > validation.json
+  artifacts:
+    paths:
+      - validation.json
+    expire_in: 7 days
+  rules:
+    - if: '$CHANGED_SERVICES && $CHANGED_SERVICES =~ "patient-service"'
+  needs:
+    - job: detect
+
+validate-config:
+  stage: validate
+  image: ghcr.io/yannh/kubeconform
+  script:
+    - kubeconform -summary -output json $WORKING_DIR/config-service/k8s > validation.json
+  artifacts:
+    paths:
+      - validation.json
+    expire_in: 7 days
+  rules:
+    - if: '$CHANGED_SERVICES && $CHANGED_SERVICES =~ "config-service"'
+  needs:
+    - job: detect
+
+deploy-patient:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE/patient-service:dev $WORKING_DIR/patient-service
+    - docker push $CI_REGISTRY_IMAGE/patient-service:dev
+  rules:
+    - if: '$CHANGED_SERVICES && $CHANGED_SERVICES =~ "patient-service"'
+  needs:
+    - job: detect
+    - job: validate-patient
+
+deploy-config:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE/config-service:dev $WORKING_DIR/config-service
+    - docker push $CI_REGISTRY_IMAGE/config-service:dev
+  rules:
+    - if: '$CHANGED_SERVICES && $CHANGED_SERVICES =~ "config-service"'
+  needs:
+    - job: detect
+    - job: validate-config

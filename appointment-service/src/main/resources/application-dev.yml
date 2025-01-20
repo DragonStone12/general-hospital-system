@@ -8,20 +8,20 @@ spring:
     password: ${APPOINTMENT_SERVICE_PASSWORD}
     url: r2dbc:mysql://${APPOINTMENT_SERVICE_HOSTNAME}:3306/${APPOINTMENT_SERVICE_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     pool:
-      max-size: 20        # Increased for dev environment
-      initial-size: 10    # Half of max-size
+      max-size: 20
+      initial-size: 10
       max-create-connection-time: 5s
   datasource:
     hikari:
       pool-name: appointment-service-pool
       maximum-pool-size: 5
       minimum-idle: 2
-      idle-timeout: 300000      # 5 minutes
-      max-lifetime: 600000      # 10 minutes
-      connection-timeout: 30000  # 30 seconds
-      validation-timeout: 5000   # 5 seconds
+      idle-timeout: 300000
+      max-lifetime: 600000
+      connection-timeout: 30000
+      validation-timeout: 5000
       connection-test-query: SELECT 1
-      register-mbeans: true     # Helpful for monitoring in dev
+      register-mbeans: true
   flyway:
     user: ${spring.r2dbc.username}
     password: ${spring.r2dbc.password}
@@ -73,6 +73,22 @@ management:
       show-components: always
       probes:
         enabled: true
+      db:
+        enabled: true
+      mysql:
+        enabled: true
+      diskspace:
+        enabled: true
+      hikaricp:
+        enabled: true
+      endpoint:
+        health:
+          show-details: always
+          group:
+            readiness:
+              include: db,mysql,diskSpace,hikaricp
+            liveness:
+              include: ping
   info:
     env:
       enabled: true
