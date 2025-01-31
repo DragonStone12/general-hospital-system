@@ -49,7 +49,7 @@ jobs:
 
   build-and-test:
     needs: detect-changes
-    if: matrix.service != 'gh-frontend'
+    if: ${{ contains(fromJson(needs.detect-changes.outputs.matrix).include[*].service, 'gh-frontend') == false }}
     strategy:
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
     name: Build and Test ${{ matrix.service }}
