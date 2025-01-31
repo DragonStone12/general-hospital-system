@@ -23,37 +23,27 @@ spec:
         - name: patient-service
           image: patient-service
           imagePullPolicy: Never
-          lifecycle:
-            preStop:
-              exec:
-                command: [ "sh", "-c", "sleep 5" ]
-          ports:
-            - containerPort: 9010
-            - containerPort: 8010
-            - containerPort: 5005
           env:
             - name: SPRING_CONFIG_LOCATION
-              value: file:/workspace/config/application.yml
-            - name: SPRING_DATASOURCE_URL
-              value: jdbc:postgresql://patients-postgres/patients
-            - name: JAVA_TOOL_OPTIONS
-              value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
-          livenessProbe:
-            httpGet:
-              path: /actuator/health/liveness
-              port: 8010
-            initialDelaySeconds: 10
-            periodSeconds: 5
-          readinessProbe:
-            httpGet:
-              path: /actuator/health/readiness
-              port: 8010
-            initialDelaySeconds: 5
-            periodSeconds: 15
+              value: file:/workspace/configmap/application.yml
+            - name: PATIENT_SERVICE_HOSTNAME
+              value: "patients-postgres"
+            - name: PATIENT_SERVICE_DB
+              value: "patients"
+            - name: PATIENT_SERVICE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: patient-db-credentials
+                  key: username
+            - name: PATIENT_SERVICE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: patient-db-credentials
+                  key: password
           volumeMounts:
-            - name: config-volume
-              mountPath: /workspace/config
+            - name: patient-config-volume
+              mountPath: /workspace/configmap
       volumes:
-        - name: config-volume
+        - name: patient-config-volume
           configMap:
             name: patient-service

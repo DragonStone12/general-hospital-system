@@ -135,6 +135,30 @@ services:
       driver: fluentd
       options:
         fluentd-address: 127.0.0.1:24224
+
+  gh-frontend:
+    container_name: gh-frontend
+    depends_on:
+      - patient-service
+      - appointment-service
+      - provider-service
+      - dispatcher-service
+    build:
+      context: ../gh-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:3000"
+    networks:
+      - general-hospital-network
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: 127.0.0.1:24224
+    environment:
+      PATIENT_SERVICE_URL: http://patient-service:9010
+      APPOINTMENT_SERVICE_URL: http://appointment-service:9020
+      PROVIDER_SERVICE_URL: http://provider-service:9040
+      DISPATCHER_SERVICE_URL: http://dispatcher-service:9030      
   
   patients-postgres:
     container_name: patients-postgres
