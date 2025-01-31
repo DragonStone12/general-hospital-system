@@ -8,9 +8,9 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderConfigurati
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
-import java.util.function.Consumer;
 
 import java.time.LocalDateTime;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,15 +20,18 @@ class ApplicationFunctionsTests {
     @Autowired
     private InputDestination input;
 
-
     @Autowired
     private ApplicationFunctions applicationFunctions;
 
     @Test
     void shouldHandleAppointmentCreatedEvent() {
         // Given
-        AppointmentCreatedEvent event = new AppointmentCreatedEvent(1L, "William B. Yeats", "Dr. Strangelove",
+        AppointmentCreatedEvent event = new AppointmentCreatedEvent(
+            1L,
+            "William B. Yeats", "" +
+            "Dr. Strangelove",
             LocalDateTime.now());
+
         Message<AppointmentCreatedEvent> message = MessageBuilder.withPayload(event)
             .build();
 
@@ -42,9 +45,8 @@ class ApplicationFunctionsTests {
     }
 
     @Test
-    void handleAppointment_shouldAddEventToReceivedEvents() {
+    void handleAppointmentShouldAddEventToReceivedEvents() {
         // Given
-        ApplicationFunctions applicationFunctions = new ApplicationFunctions();
         Consumer<Message<AppointmentCreatedEvent>> handler = applicationFunctions.handleAppointment();
 
         LocalDateTime appointmentTime = LocalDateTime.now();
