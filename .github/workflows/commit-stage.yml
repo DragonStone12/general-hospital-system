@@ -23,6 +23,8 @@ jobs:
               - 'dispatcher-service/**'
             provider-service:
               - 'provider-service/**'
+            gh-frontend:
+              - 'gh-frontend/**'
 
       - id: set-matrix
         name: Set matrix
@@ -40,11 +42,14 @@ jobs:
           if [[ "${{ steps.filter.outputs.dispatcher-service }}" == "true" ]]; then
             services+=("provider-service")
           fi
+          if [[ "${{ steps.filter.outputs.gh-frontend }}" == "true" ]]; then
+            services+=("gh-frontend")
+          fi
           echo "matrix=$(jq -c -n --arg s "${services[*]}" '{include: ($s | split(" ") | map({service: .}))}' )" >> $GITHUB_OUTPUT
 
   build-and-test:
     needs: detect-changes
-    if: fromJson(needs.detect-changes.outputs.matrix).include[0]
+    if: matrix.service != 'gh-frontend'
     strategy:
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
     name: Build and Test ${{ matrix.service }}
