@@ -12,6 +12,7 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,16 +32,47 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest
 @Import(TestChannelBinderConfiguration.class)
-class ApplicationFunctionsTests {
+class ApplicationFunctionTests {
     @Autowired
     private InputDestination input;
 
     @Autowired
     private ApplicationFunctions applicationFunctions;
+    @Test
+    void shouldStoreReceivedEvent() {
+        // Given
+        ApplicationFunctions applicationFunctions = new ApplicationFunctions();
+        AppointmentCreatedEvent event = new AppointmentCreatedEvent(1L, "John", "Dr. Smith", LocalDateTime.now());
+        Message<AppointmentCreatedEvent> message = MessageBuilder.withPayload(event).build();
+        Consumer<Message<AppointmentCreatedEvent>> consumer = applicationFunctions.handleAppointment();
 
+        // When
+        consumer.accept(message);
+
+        // Then
+        assertThat(applicationFunctions.getReceivedEvents())
+            .hasSize(1)
+            .first()
+            .isEqualTo(event);
+    }
 
     @Test
-    @Tag("integration")
+    void shouldProvideDefensiveCopy() {
+        // Given
+        ApplicationFunctions applicationFunctions = new ApplicationFunctions();
+        AppointmentCreatedEvent event = new AppointmentCreatedEvent(1L, "John", "Dr. Smith", LocalDateTime.now());
+        Message<AppointmentCreatedEvent> message = MessageBuilder.withPayload(event).build();
+        applicationFunctions.handleAppointment().accept(message);
+
+        // When
+        List<AppointmentCreatedEvent> events = applicationFunctions.getReceivedEvents();
+        events.clear(); // Try to modify the returned list
+
+        // Then
+        assertThat(applicationFunctions.getReceivedEvents()).hasSize(1); // Original list should be unchanged
+    }
+
+    @Test
     void shouldHandleAppointmentCreatedEvent() {
         // Given
         AppointmentCreatedEvent event = new AppointmentCreatedEvent(
