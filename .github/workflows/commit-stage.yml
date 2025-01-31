@@ -45,8 +45,9 @@ jobs:
           if [[ "${{ steps.filter.outputs.gh-frontend }}" == "true" ]]; then
             services+=("gh-frontend")
           fi
-          echo "matrix=$(jq -c -n --arg s "${services[*]}" '{include: ($s | split(" ") | map({service: .}))}' )" >> $GITHUB_OUTPUT
-
+          matrix=$(jq -c -n --arg s "${services[*]}" '{include: ($s | split(" ") | map({service: .}))}')
+          echo "Generated matrix: $matrix"  # Debug output
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
   build-and-test:
     needs: detect-changes
     if: ${{ contains(fromJson(needs.detect-changes.outputs.matrix).include[*].service, 'gh-frontend') == false }}
