@@ -39,7 +39,7 @@ jobs:
           if [[ "${{ steps.filter.outputs.dispatcher-service }}" == "true" ]]; then
             services+=("dispatcher-service")
           fi
-          if [[ "${{ steps.filter.outputs.dispatcher-service }}" == "true" ]]; then
+          if [[ "${{ steps.filter.outputs.provider-service }}" == "true" ]]; then
             services+=("provider-service")
           fi
           if [[ "${{ steps.filter.outputs.gh-frontend }}" == "true" ]]; then
