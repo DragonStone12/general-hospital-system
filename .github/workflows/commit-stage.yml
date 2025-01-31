@@ -14,8 +14,6 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
-          base: HEAD^
-          ref: HEAD
           filters: |
             patient-service:
               - 'patient-service/**'
