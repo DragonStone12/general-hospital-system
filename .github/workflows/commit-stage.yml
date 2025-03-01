@@ -161,10 +161,10 @@ jobs:
 
   security-scan:
     needs: [build-and-test, detect-changes, build-and-test-frontend]
-    if: fromJson(needs.detect-changes.outputs.matrix).include[0]
+    if: always()
     strategy:
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
-    name: Security Scan ${{ matrix.service }}
+    name: Security Scan ${{ matrix.service || 'all' }}
     runs-on: ubuntu-latest
     environment: development
     permissions:
@@ -294,13 +294,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-  mark-success-if-skipped:
-    name: Mark Success if All Jobs Skipped
-    needs: [ detect-changes, build-and-test, security-scan, report-upload, validate, build-and-push,  build-and-test-frontend ]
-    if: |
-      needs.detect-changes.result == 'skipped'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Mark workflow as successful
-        run: echo "All jobs were skipped. Marking workflow as successful."
