@@ -118,16 +118,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install specific npm version
-        run: npm install -g npm@10
-        working-directory: gh-frontend
-
-      - name: Clear npm cache
-        run: npm cache clean --force
-        working-directory: gh-frontend
-
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run TypeScript linting
         run: npm run lint:ts
