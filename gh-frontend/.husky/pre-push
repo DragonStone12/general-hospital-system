@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Setting up error handling
+# This ensures if any command fails, the script exits with an error
+set -e
+
+echo "🔍 Running pre-push checks..."
+
+echo "\n📝 Running TypeScript linting..."
+npm run lint:ts
+
+echo "\n🎨 Running CSS linting..."
+npm run lint:css
+
+echo "\n🧪 Running tests..."
+npm run test
+
+echo  "\n🧪 Checking dependencies..."
+npm run check-dependencies
+
+echo "\n🧪 Running build..."
+npm run build
+
