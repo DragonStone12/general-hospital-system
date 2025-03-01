@@ -119,27 +119,34 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
+        working-directory: gh-frontend
         run: npm install
 
       - name: Run TypeScript linting
+        working-directory: gh-frontend
         run: npm run lint:ts
 
       - name: Run CSS linting
+        working-directory: gh-frontend
         run: npm run lint:css
 
       - name: Run Dependencies check
+        working-directory: gh-frontend
         run: npm run check-dependencies
 
       - name: Run Jest unit tests
+        working-directory: gh-frontend
         run: npm run test -- --watch=false --browsers=ChromeHeadlessCI --reporters=default --reporters=jest-junit
         env:
           JEST_JUNIT_OUTPUT_DIR: ./test-results/jest
 
       - name: Run Cypress E2E tests
+        working-directory: gh-frontend
         run: npm run cypress:run
         if: success() || failure()
 
       - name: Build Angular App
+        working-directory: gh-frontend
         run: npm run build
 
       - name: Upload Jest test results
@@ -147,7 +154,7 @@ jobs:
         if: always()
         with:
           name: jest-test-results-gh-frontend
-          path: test-results/jest/
+          path: gh-frontend/test-results/jest/
           retention-days: 5
 
       - name: Upload Cypress test results
@@ -155,14 +162,14 @@ jobs:
         if: always()
         with:
           name: cypress-test-results-gh-frontend
-          path: cypress/results/
+          path: gh-frontend/cypress/results/
           retention-days: 5
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build-artifacts-gh-frontend
-          path: dist/browser/gh-frontend/
+          path: gh-frontend/dist/browser/gh-frontend/
           retention-days: 1
 
   security-scan:
