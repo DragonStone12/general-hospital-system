@@ -18,7 +18,7 @@
     "cypress:report": "npx cypress run --reporter junit --reporter-options \"mochaFile=results/gh-frontend-output.xml,toConsole=true\"",
     "prepare": "husky",
     "lint:ts": "eslint 'src/**/*.{ts,js}'",
-    "lint:css": "stylelint 'src/**/*.{css,scss}'",
+    "lint:css": "stylelint 'src/**/*.{css,scss}' --fix",
     "lint": "npm run lint:ts && npm run lint:css",
     "check:outdated": "ncu --format group && ncu --format json | jq '. | to_entries[] | select(.value.current != .value.latest)' && ncu -u"
   },
