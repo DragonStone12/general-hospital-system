@@ -156,7 +156,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build-artifacts-gh-frontend
-          path: gh-frontend/dist/browser/gh-frontend/
+          path: gh-frontend/dist/gh-frontend/browser
           retention-days: 1
 
   security-scan:
