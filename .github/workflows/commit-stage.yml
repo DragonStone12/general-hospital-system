@@ -132,7 +132,7 @@ jobs:
 
       - name: Run Dependencies check
         working-directory: gh-frontend
-        run: npm run check-dependencies
+        run: npm run check:outdated
 
       - name: Run Jest unit tests
         working-directory: gh-frontend
