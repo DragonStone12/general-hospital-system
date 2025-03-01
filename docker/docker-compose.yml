@@ -147,7 +147,7 @@ services:
       context: ../gh-frontend
       dockerfile: Dockerfile
     ports:
-      - "4200:3000"
+      - "4200:80"
     networks:
       - general-hospital-network
     logging:

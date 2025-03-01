@@ -1,60 +1,61 @@
 name: Commit Stage
-on: push
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: true
+on:
+  push:
+    branches:
+      - 'feature/**'
+  pull_request:
+    branches:
+      - 'feature/**'
+  workflow_dispatch:
 
 jobs:
   detect-changes:
-    runs-on: ubuntu-24.04
+    name: Detect Changed Services
+    runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      matrix: ${{ steps.detect.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
+      - name: Checkout source code
+        uses: actions/checkout@v4
         with:
-          filters: |
-            patient-service:
-              - 'patient-service/**'
-            appointment-service:
-              - 'appointment-service/**'
-            dispatcher-service:
-              - 'dispatcher-service/**'
-            provider-service:
-              - 'provider-service/**'
-            gh-frontend:
-              - 'gh-frontend/**'
+          fetch-depth: 0 
 
-      - id: set-matrix
-        name: Set matrix
+      - name: Detect changed services
+        id: detect
         run: |
-          services=()
-          if [[ "${{ steps.filter.outputs.patient-service }}" == "true" ]]; then
-            services+=("patient-service")
+          # Get list of changed files in the last commit or PR
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          SERVICES=()
+
+          # Check which services have changed
+          if echo "$CHANGED_FILES" | grep -q '^patient-service/'; then
+            SERVICES+=("{\"service\":\"patient-service\"}")
           fi
-          if [[ "${{ steps.filter.outputs.appointment-service }}" == "true" ]]; then
-            services+=("appointment-service")
+          if echo "$CHANGED_FILES" | grep -q '^appointment-service/'; then
+            SERVICES+=("{\"service\":\"appointment-service\"}")
           fi
-          if [[ "${{ steps.filter.outputs.dispatcher-service }}" == "true" ]]; then
-            services+=("dispatcher-service")
+          if echo "$CHANGED_FILES" | grep -q '^dispatcher-service/'; then
+            SERVICES+=("{\"service\":\"dispatcher-service\"}")
           fi
-          if [[ "${{ steps.filter.outputs.provider-service }}" == "true" ]]; then
-            services+=("provider-service")
+          if echo "$CHANGED_FILES" | grep -q '^provider-service/'; then
+            SERVICES+=("{\"service\":\"provider-service\"}")
           fi
-          if [[ "${{ steps.filter.outputs.gh-frontend }}" == "true" ]]; then
-            services+=("gh-frontend")
+          if echo "$CHANGED_FILES" | grep -q '^gh-frontend/'; then
+            SERVICES+=("{\"service\":\"gh-frontend\"}")
           fi
-          matrix=$(jq -c -n --arg s "${services[*]}" '{include: ($s | split(" ") | map({service: .}))}')
-          echo "Generated matrix: $matrix"  # Debug output
-          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+          # Create a JSON matrix for downstream jobs
+          MATRIX="{\"include\": [${SERVICES[@]}]}"
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
   build-and-test:
     needs: detect-changes
     if: ${{ contains(fromJson(needs.detect-changes.outputs.matrix).include[*].service, 'gh-frontend') == false }}
     strategy:
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
     name: Build and Test ${{ matrix.service }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     environment: development
     permissions:
       contents: read
@@ -69,7 +70,7 @@ jobs:
           java-version: 21
           cache: gradle
 
-      - name: Build, unit tests and integration tests
+      - name: Build, unit tests, and integration tests
         working-directory: ${{ matrix.service }}
         run: |
           chmod +x gradlew
@@ -104,13 +105,73 @@ jobs:
           path: ${{ matrix.service }}/build/libs/
           retention-days: 1
 
+  build-and-test-frontend:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: contains(fromJson(needs.detect-changes.outputs.matrix).include.*.service, 'gh-frontend')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript linting
+        run: npm run lint:ts
+
+      - name: Run CSS linting
+        run: npm run lint:css
+
+      - name: Run Dependencies check
+        run: npm run check-dependencies
+
+      - name: Run Jest unit tests
+        run: npm run test -- --watch=false --browsers=ChromeHeadlessCI --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: ./test-results/jest
+
+      - name: Run Cypress E2E tests
+        run: npm run cypress:run
+        if: success() || failure()
+
+      - name: Build Angular App
+        run: npm run build
+
+      - name: Upload Jest test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jest-test-results-gh-frontend
+          path: test-results/jest/
+          retention-days: 5
+
+      - name: Upload Cypress test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-test-results-gh-frontend
+          path: cypress/results/
+          retention-days: 5
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-artifacts-gh-frontend
+          path: dist/browser/gh-frontend/
+          retention-days: 1
+
   security-scan:
-    needs: [build-and-test, detect-changes]
+    needs: [build-and-test, detect-changes, build-and-test-frontend]
     if: fromJson(needs.detect-changes.outputs.matrix).include[0]
     strategy:
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
     name: Security Scan ${{ matrix.service }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     environment: development
     permissions:
       contents: read
@@ -149,7 +210,7 @@ jobs:
     if: fromJson(needs.detect-changes.outputs.matrix).include[0]
     strategy:
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     permissions:
       security-events: write
     steps:
@@ -171,7 +232,7 @@ jobs:
     if: fromJson(needs.detect-changes.outputs.matrix).include[0]
     strategy:
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -239,3 +300,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  mark-success-if-skipped:
+    name: Mark Success if All Jobs Skipped
+    needs: [ detect-changes, build-and-test, security-scan, report-upload, validate, build-and-push,  build-and-test-frontend ]
+    if: |
+      needs.detect-changes.result == 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark workflow as successful
+        run: echo "All jobs were skipped. Marking workflow as successful."
