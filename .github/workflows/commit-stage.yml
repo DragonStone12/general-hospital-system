@@ -223,7 +223,7 @@ jobs:
   validate:
     name: Validate Kubernetes Manifests
     needs: detect-changes
-    if: fromJson(needs.detect-changes.outputs.matrix).include[0]
+    if: always()
     strategy:
       matrix: ${{fromJson(needs.detect-changes.outputs.matrix)}}
     runs-on: ubuntu-latest
