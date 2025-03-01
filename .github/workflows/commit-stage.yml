@@ -117,19 +117,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install Build Tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential python3  
 
       - name: Install dependencies
         working-directory: gh-frontend
         run: npm install
-
-      - name: Rebuild Native Modules
-        working-directory: gh-frontend
-        run: |
-          npm rebuild lightningcss    
 
       - name: Run TypeScript linting
         working-directory: gh-frontend
