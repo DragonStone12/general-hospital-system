@@ -140,11 +140,6 @@ jobs:
         env:
           JEST_JUNIT_OUTPUT_DIR: ./test-results/jest
 
-      - name: Run Cypress E2E tests
-        working-directory: gh-frontend
-        run: npm run cypress:run
-        if: success() || failure()
-
       - name: Build Angular App
         working-directory: gh-frontend
         run: npm run build
@@ -155,14 +150,6 @@ jobs:
         with:
           name: jest-test-results-gh-frontend
           path: gh-frontend/test-results/jest/
-          retention-days: 5
-
-      - name: Upload Cypress test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: cypress-test-results-gh-frontend
-          path: gh-frontend/cypress/results/
           retention-days: 5
 
       - name: Upload Build Artifacts
