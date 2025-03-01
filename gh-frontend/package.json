@@ -20,7 +20,7 @@
     "lint:ts": "eslint 'src/**/*.{ts,js}'",
     "lint:css": "stylelint 'src/**/*.{css,scss}' --fix",
     "lint": "npm run lint:ts && npm run lint:css",
-    "check:outdated": "ncu --format group && ncu --format json | jq '. | to_entries[] | select(.value.current != .value.latest)' && ncu -u || true"
+    "check:outdated": "ncu --format group && ncu --format json | jq '. | to_entries[] | select(.value.current != .value.latest)'"
   },
   "lint-staged": {
     "*.{ts,js}": [
@@ -76,7 +76,7 @@
     "stylelint": "^16.15.0",
     "stylelint-config-standard": "^37.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "~5.8.2",
+    "typescript": "~5.7.0",
     "typescript-eslint": "^8.25.0"
   }
 }
