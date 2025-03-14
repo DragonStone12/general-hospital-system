@@ -114,7 +114,7 @@ services:
         condition: service_started
         required: true
     build:
-      context: ../provider-service
+      context: ../provider-profile-service
       dockerfile: Dockerfile
     ports:
       - "9040:9040"

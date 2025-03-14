@@ -1,7 +1,6 @@
 package com.pam.dispatcherservice;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.SpringApplication;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -11,9 +10,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mockStatic;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 
@@ -67,6 +63,7 @@ class DispatcherServiceApplicationTests {
         ApplicationFunctions applicationFunctions = new ApplicationFunctions();
         assertThat(applicationFunctions.getReceivedEvents()).isEmpty();
     }
+
     @Test
     void testToString() {
         LocalDateTime time = LocalDateTime.now();
@@ -78,22 +75,11 @@ class DispatcherServiceApplicationTests {
             .contains("Dr. Smith")
             .contains(time.toString());
     }
+
     @Test
     void contextLoads() {
         assertThatCode(() -> DispatcherServiceApplication.main(new String[]{}))
             .doesNotThrowAnyException();
-//        try (var mockedSpringApplication = mockStatic(SpringApplication.class)) {
-//            // when
-//            DispatcherServiceApplication.main(new String[]{});
-//
-//            // then
-//            mockedSpringApplication.verify(
-//                () -> SpringApplication.run(
-//                    eq(DispatcherServiceApplication.class),
-//                    any(String[].class)
-//                )
-//            );
-//        }
     }
 
     @Test
