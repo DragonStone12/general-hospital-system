@@ -114,7 +114,7 @@ services:
         condition: service_started
         required: true
     build:
-      context: ../provider-service
+      context: ../provider-profile-service
       dockerfile: Dockerfile
     ports:
       - "9040:9040"
@@ -147,7 +147,7 @@ services:
       context: ../gh-frontend
       dockerfile: Dockerfile
     ports:
-      - "4200:3000"
+      - "4200:80"
     networks:
       - general-hospital-network
     logging:

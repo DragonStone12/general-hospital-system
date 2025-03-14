@@ -1,6 +1,6 @@
 spring:
   application:
-    name: Provider Service
+    name: patient-service
   lifecycle:
     timeout-per-shutdown-phase: 15s
   cloud:
@@ -15,27 +15,34 @@ spring:
         initial-interval: 1500
         max-interval: 3000
         multiplier: 1.5
-  data:
-    mongodb:
-      uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${PROVIDER_SERVICE_HOSTNAME}:27017/${PROVIDER_SERVICE_DB}?authSource=admin
-      auto-index-creation: true
-mongock:
-  change-logs-scan-package: com.pam.providerservice.changelogs
-  migration-scan-package: com.pam.providerservice.changelogs
-  enabled: true
-  transaction-enabled: false
-  runner-type: InitializingBean
-  track-ignored: false
-  migration-repository-name: provider_mongockChangeLog
-  lock-repository-name: provider_mongockLock
-  index-creation: true
-  throw-exception-if-cannot-obtain-lock: false
-  disable-logging: false
-  legacy-migration: false
-  start-system-version: 0.0.1
-  end-system-version: 99.99.99
+  datasource:
+    url: jdbc:postgresql://${PROVIDER_SERVICE_HOSTNAME}:5432/${PROVIDER_SERVICE_DB}
+    username: ${PROVIDER_SERVICE_USERNAME}
+    password: ${PROVIDER_SERVICE_PASSWORD}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 300000
+      max-lifetime: 600000
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+    hibernate:
+      ddl-auto: validate
+      show-sql: ${SHOULD_SHOW_SQL:false}
+    open-in-view: false
+  flyway:
+    user: ${PROVIDER_SERVICE_USERNAME}
+    password: ${PROVIDER_SERVICE_PASSWORD}
+    url: jdbc:postgresql://${PROVIDER_SERVICE_HOSTNAME}:5432/${PROVIDER_SERVICE_DB}
+    locations: classpath:db/migration
+    encoding: UTF-8
+    baseline-on-migrate: false
+
 server:
-  port: 9040
+  port: 9010
   shutdown: graceful
   tomcat:
     connection-timeout: 2s
@@ -46,7 +53,7 @@ server:
 
 management:
   server:
-    port: 8040
+    port: 8010
   endpoints:
     web:
       base-path: /actuator
@@ -60,14 +67,26 @@ management:
     shutdown:
       enabled: false
     health:
-      mongo:
-        enabled: true
-      db:
-        enabled: true
       show-details: always
       show-components: always
       probes:
         enabled: true
+      db:
+        enabled: true
+      postgres:
+        enabled: true
+      diskspace:
+        enabled: true
+      hikaricp:
+        enabled: true
+      endpoint:
+        health:
+          show-details: always
+          group:
+            readiness:
+              include: db,postgres,diskSpace,hikaricp
+            liveness:
+              include: ping
   info:
     env:
       enabled: true
@@ -84,9 +103,12 @@ logging:
     console: "%clr(${spring.application.name} %d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
   level:
     root: INFO
-    org.springframework.data.mongodb: DEBUG
-    io.mongock: DEBUG
+    org.flywaydb: INFO
+    org.postgresql: DEBUG
     org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.jdbc: DEBUG
     org.springframework.transaction: DEBUG
     org.springframework.cloud: DEBUG                     # Spring Cloud components
     org.springframework.cloud.kubernetes: DEBUG          # Kubernetes integration
@@ -98,10 +120,10 @@ logging:
     org.springframework.cache: DEBUG                     # Caching operations
     io.micrometer: DEBUG                                # Metrics collection
     org.springframework.cloud.circuit.breaker: DEBUG
-    com.pam.providerservice: DEBUG
+    com.pam.providerervice: DEBUG
     org.springframework.boot.availability: DEBUG
   file:
-    name: logs/provider-service.log
+    name: logs/patient-service.log
     max-size: 10MB
     max-history: 7
     total-size-cap: 100MB

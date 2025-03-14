@@ -1,0 +1,107 @@
+spring:
+  application:
+    name: Provider Service
+  lifecycle:
+    timeout-per-shutdown-phase: 15s
+  cloud:
+    loadbalancer:
+      request:
+        timeout:
+          connect: 2500
+          read: 2500
+      fail-fast: false
+      retry:
+        max-attempts: 8
+        initial-interval: 1500
+        max-interval: 3000
+        multiplier: 1.5
+  data:
+    mongodb:
+      uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${PROVIDER_SERVICE_HOSTNAME}:27017/${PROVIDER_SERVICE_DB}?authSource=admin
+      auto-index-creation: true
+mongock:
+  change-logs-scan-package: com.pam.providerservice.changelogs
+  migration-scan-package: com.pam.providerservice.changelogs
+  enabled: true
+  transaction-enabled: false
+  runner-type: InitializingBean
+  track-ignored: false
+  migration-repository-name: provider_mongockChangeLog
+  lock-repository-name: provider_mongockLock
+  index-creation: true
+  throw-exception-if-cannot-obtain-lock: false
+  disable-logging: false
+  legacy-migration: false
+  start-system-version: 0.0.1
+  end-system-version: 99.99.99
+server:
+  port: 9040
+  shutdown: graceful
+  tomcat:
+    connection-timeout: 2s
+    keep-alive-timeout: 15s
+    threads:
+      max: 50
+      min-spare: 5
+
+management:
+  server:
+    port: 8040
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,metrics,prometheus,refresh,info,env,mappings,beans
+  export:
+    prometheus:
+      enabled: true
+      step: 30s
+  endpoint:
+    shutdown:
+      enabled: false
+    health:
+      mongo:
+        enabled: true
+      db:
+        enabled: true
+      show-details: always
+      show-components: always
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
+    metrics:
+      tags:
+        application: ${spring.application.name}
+
+logging:
+  pattern:
+    console: "%clr(${spring.application.name} %d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
+  level:
+    root: INFO
+    org.springframework.data.mongodb: DEBUG
+    io.mongock: DEBUG
+    org.springframework.security: INFO
+    org.springframework.transaction: DEBUG
+    org.springframework.cloud: DEBUG                     # Spring Cloud components
+    org.springframework.cloud.kubernetes: DEBUG          # Kubernetes integration
+    org.springframework.web.client.RestTemplate: DEBUG   # Inter-service REST calls
+    org.springframework.web.reactive: DEBUG              # WebClient calls
+    org.springframework.boot.actuate: DEBUG             # Actuator endpoints
+    org.springframework.cloud.loadbalancer: DEBUG       # Load balancing
+    org.springframework.retry: DEBUG                     # Retry mechanisms
+    org.springframework.cache: DEBUG                     # Caching operations
+    io.micrometer: DEBUG                                # Metrics collection
+    org.springframework.cloud.circuit.breaker: DEBUG
+    com.pam.providerservice: DEBUG
+    org.springframework.boot.availability: DEBUG
+  file:
+    name: logs/provider-profile-service.log
+    max-size: 10MB
+    max-history: 7
+    total-size-cap: 100MB

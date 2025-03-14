@@ -171,28 +171,4 @@ CREATE TABLE "appointments" (
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
-ALTER TABLE "patient_addresses" ADD FOREIGN KEY ("patient_id") REFERENCES "patients" ("id");
 
-ALTER TABLE "patient_insurance" ADD FOREIGN KEY ("patient_id") REFERENCES "patients" ("id");
-
-ALTER TABLE "patient_insurance" ADD FOREIGN KEY ("insurance_plan_id") REFERENCES "insurance_plans" ("id");
-
-ALTER TABLE "patient_visits" ADD FOREIGN KEY ("patient_id") REFERENCES "patients" ("id");
-
-ALTER TABLE "patient_visits" ADD FOREIGN KEY ("provider_id") REFERENCES "providers" ("id");
-
-ALTER TABLE "patient_visits" ADD FOREIGN KEY ("facility_id") REFERENCES "facilities" ("id");
-
-ALTER TABLE "patient_visits" ADD FOREIGN KEY ("appointment_id") REFERENCES "appointments" ("id");
-
-ALTER TABLE "patient_documents" ADD FOREIGN KEY ("patient_id") REFERENCES "patients" ("id");
-
-ALTER TABLE "appointments" ADD FOREIGN KEY ("patient_id") REFERENCES "patients" ("id");
-
-ALTER TABLE "appointments" ADD FOREIGN KEY ("provider_id") REFERENCES "providers" ("id");
-
-ALTER TABLE "appointments" ADD FOREIGN KEY ("facility_id") REFERENCES "facilities" ("id");
-
-ALTER TABLE "appointments" ADD FOREIGN KEY ("service_id") REFERENCES "services" ("id");
-
-ALTER TABLE "insurance_plans" ADD FOREIGN KEY ("carrier_id") REFERENCES "insurance_carriers" ("id");
