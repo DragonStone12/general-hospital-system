@@ -1,18 +1,17 @@
-package com.pam.providerservice;
+package com.pam.providerervice;
 
+import com.pam.providerservice.ProviderServiceApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
-
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringJUnitConfig
 class ProviderServiceApplicationTests {
-
 
     @Test
     void contextLoads() {
@@ -39,3 +38,6 @@ class ProviderServiceApplicationTests {
         assertThat(application).isNotNull();
     }
 }
+
+
+

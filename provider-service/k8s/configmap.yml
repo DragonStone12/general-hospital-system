@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: provider-service
+data:
+  application.yml: |
+    spring:
+      lifecycle:
+        timeout-per-shutdown-phase: 15s
+      cloud:
+        loadbalancer:
+          request:
+            timeout:
+              connect: 2500
+              read: 2500
+          fail-fast: false
+          retry:
+            max-attempts: 8
+            initial-interval: 1500
+            max-interval: 3000
+            multiplier: 1.5
+      datasource:
+        url: jdbc:postgresql://${PROVIDER_SERVICE_HOSTNAME}:5432/${PROVIDER_SERVICE_DB}
+        username: ${PROVIDER_SERVICE_USERNAME}
+        password: ${PROVIDER_SERVICE_PASSWORD}
+        hikari:
+          maximum-pool-size: 5
+          minimum-idle: 2
+          connection-timeout: 30000
+          idle-timeout: 300000
+          max-lifetime: 600000
+      jpa:
+        properties:
+          hibernate:
+            format_sql: true
+        hibernate:
+          ddl-auto: validate
+          show-sql: ${SHOULD_SHOW_SQL:false}
+        open-in-view: false
+      flyway:
+        user: ${PROVIDER_SERVICE_USERNAME}
+        password: ${PROVIDER_SERVICE_PASSWORD}
+        url: jdbc:postgresql://${PROVIDER_SERVICE_HOSTNAME}:5432/${PROVIDER_SERVICE_DB}
+        locations: classpath:db/migration
+        encoding: UTF-8
+        baseline-on-migrate: false
+
+    server:
+      port: 9010
+      shutdown: graceful
+      tomcat:
+        connection-timeout: 2s
+        keep-alive-timeout: 15s
+        threads:
+          max: 50
+          min-spare: 5
+
+    management:
+      server:
+        port: 8010
+      endpoints:
+        web:
+          base-path: /actuator
+          exposure:
+            include: health,metrics,prometheus,refresh,info,env,mappings,beans
+      export:
+        prometheus:
+          enabled: true
+          step: 30s
+      endpoint:
+        shutdown:
+          enabled: false
+        health:
+          show-details: always
+          show-components: always
+          probes:
+            enabled: true
+      info:
+        env:
+          enabled: true
+        java:
+          enabled: true
+        os:
+          enabled: true
+        metrics:
+          tags:
+            application: ${spring.application.name}
+
+    logging:
+      pattern:
+        console: "%clr(${spring.application.name} %d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
+      level:
+        root: INFO
+        org.flywaydb: INFO
+        org.mysql: DEBUG
+        org.springframework.security: INFO
+        org.hibernate.SQL: DEBUG
+        org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+        org.springframework.jdbc: DEBUG
+        org.springframework.transaction: DEBUG
+        org.springframework.cloud: DEBUG
+        org.springframework.cloud.kubernetes: DEBUG
+        org.springframework.web.client.RestTemplate: DEBUG
+        org.springframework.web.reactive: DEBUG
+        org.springframework.boot.actuate: DEBUG
+        org.springframework.cloud.loadbalancer: DEBUG
+        org.springframework.retry: DEBUG
+        org.springframework.cache: DEBUG
+        io.micrometer: DEBUG
+        org.springframework.cloud.circuit.breaker: DEBUG
+        com.pam.providerservice: DEBUG
+        org.springframework.boot.availability: DEBUG
+      file:
+        name: logs/provider-service.log
+        max-size: 10MB
+        max-history: 7
+        total-size-cap: 100MB
