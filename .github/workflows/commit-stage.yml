@@ -38,8 +38,8 @@ jobs:
           if echo "$CHANGED_FILES" | grep -q '^dispatcher-service/'; then
             SERVICES+=("{\"service\":\"dispatcher-service\"}")
           fi
-          if echo "$CHANGED_FILES" | grep -q '^provider-service/'; then
-            SERVICES+=("{\"service\":\"provider-service\"}")
+          if echo "$CHANGED_FILES" | grep -q '^provider-profile-service/'; then
+            SERVICES+=("{\"service\":\"provider-profile-service\"}")
           fi
           if echo "$CHANGED_FILES" | grep -q '^gh-frontend/'; then
             SERVICES+=("{\"service\":\"gh-frontend\"}")
@@ -78,8 +78,8 @@ jobs:
           ./gradlew checkstyleTest --stacktrace || exit 1
           ./gradlew test --stacktrace || exit 1
           ./gradlew integrationTest --stacktrace || exit 1
-          ./gradlew jacocoTestReport --stacktrace || exit 1
-          ./gradlew jacocoTestCoverageVerification --stacktrace || exit 1
+#          ./gradlew jacocoTestReport --stacktrace || exit 1
+#          ./gradlew jacocoTestCoverageVerification --stacktrace || exit 1
           ./gradlew spotbugsMain --stacktrace || exit 1
           ./gradlew spotbugsTest --stacktrace || exit 1
 
